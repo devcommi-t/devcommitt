@@ -46,6 +46,7 @@ function build() {
   fs.writeFileSync(path.join(OUT, 'assets/css/theme.css'), `:root{--color-cream:${th.background};--color-forest:${th.primary};--color-terracotta:${th.accent};--color-terracotta-dark:color-mix(in srgb, ${th.accent} 78%, #000);--color-cream-deep:${th.surface};--color-line:${th.primary}33;--color-text:${th.text};color-scheme:light}body{color:var(--color-text)}\n`);
 
   fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
+  if (fs.existsSync(path.join(R, 'CNAME'))) fs.copyFileSync(path.join(R, 'CNAME'), path.join(OUT, 'CNAME'));
   const urls = Object.keys(out).filter(x => !x.endsWith('.html'));
   fs.writeFileSync(path.join(OUT, 'robots.txt'), `User-agent: *\nAllow: /\n${SITE ? `Sitemap: ${SITE}/sitemap.xml\n` : ''}`);
   if (SITE) {

@@ -22,9 +22,15 @@ jobs:
         run: |
           REPO="${GITHUB_REPOSITORY#*/}"
           OWNER="${GITHUB_REPOSITORY_OWNER}"
-          if [ "$REPO" = "${OWNER}.github.io" ]; then BASE=""; else BASE="/$REPO"; fi
-          export BASE_PATH="$BASE"
-          export SITE_URL="https://${OWNER}.github.io${BASE}"
+          if [ -s CNAME ]; then
+            # Custom domain: the site lives at the root of the domain
+            BASE=""; SITE_URL="https://$(tr -d '[:space:]' < CNAME)"
+          elif [ "$REPO" = "${OWNER}.github.io" ]; then
+            BASE=""; SITE_URL="https://${OWNER}.github.io"
+          else
+            BASE="/$REPO"; SITE_URL="https://${OWNER}.github.io/$REPO"
+          fi
+          export BASE_PATH="$BASE" SITE_URL
           node build.js
       - uses: actions/upload-pages-artifact@v3
         with:
