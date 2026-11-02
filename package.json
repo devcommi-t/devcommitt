@@ -1,0 +1,11 @@
+{
+  "name": "dev-commit-site",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Static front-end portfolio site for <dev.commit> (GitHub Pages ready)",
+  "scripts": {
+    "dev": "node build.js --serve",
+    "build": "node build.js"
+  },
+  "engines": { "node": ">=18" }
+}
