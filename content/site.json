@@ -5,6 +5,14 @@
   "siteUrl": "",
   "email": "devcommitt@gmail.com",
   "formEndpoint": "https://formspree.io/f/myeebowg",
+  "social": {
+    "instagram": "",
+    "linkedin": "",
+    "facebook": "",
+    "youtube": "",
+    "x": "",
+    "github": ""
+  },
   "legal": [],
   "showDemoProjects": true,
   "sections": {
@@ -49,6 +57,15 @@
     "secondary": {
       "label": "Start a Project",
       "href": "/contact/"
+    },
+    "typed": {
+      "prefix": "We craft",
+      "words": [
+        "Shopify stores",
+        "custom themes",
+        "flexible sections",
+        "fast, branded storefronts"
+      ]
     }
   },
   "categories": [
@@ -225,7 +242,15 @@
     "title": "Have a Brand Worth Building For?",
     "text": "Let's turn your next e-commerce idea into a storefront built with purpose.",
     "label": "Let's Talk",
-    "href": "/contact/"
+    "href": "/contact/",
+    "swap": {
+      "prefix": "For brands that want",
+      "words": [
+        "more sales",
+        "a sharper look",
+        "a faster store"
+      ]
+    }
   },
   "servicesIntro": {
     "title": "Everything You Need for a Powerful Shopify Store.",
@@ -255,11 +280,36 @@
   },
   "copy": {},
   "marquee": {
-    "enabled": false,
+    "enabled": true,
     "speed": "normal",
     "items": []
   },
-  "social": {
-    "instagram": "https://www.instagram.com/dev.committ"
-  }
+  "spotlight": {
+    "eyebrow": "Why brands choose us",
+    "title": "Built for your brand, not a template.",
+    "text": "Every storefront starts from your brand and ends in something your team can edit on its own.",
+    "items": [
+      {
+        "value": "OS 2.0",
+        "label": "Online Store 2.0",
+        "desc": "Custom themes with flexible sections and JSON templates."
+      },
+      {
+        "value": "Mobile-first",
+        "label": "Responsive storefronts",
+        "desc": "Designed deliberately for mobile, tablet and desktop."
+      },
+      {
+        "value": "No-code",
+        "label": "Edit it yourself",
+        "desc": "Update pages from the Shopify theme editor without a developer."
+      },
+      {
+        "value": "Clean code",
+        "label": "Easy to extend",
+        "desc": "Readable, organized code that stays fast to change after launch."
+      }
+    ]
+  },
+  "bigText": "Design • Build • Launch •"
 }

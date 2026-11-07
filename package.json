@@ -5,7 +5,8 @@
   "description": "Static front-end portfolio site for <dev.commit> (GitHub Pages ready)",
   "scripts": {
     "dev": "node build.js --serve",
-    "build": "node build.js"
+    "build": "node build.js",
+    "add-project": "node scripts/add-project.js"
   },
   "engines": { "node": ">=18" }
 }

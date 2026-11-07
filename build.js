@@ -11,10 +11,58 @@ const e = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&
 const safeUrl = s => /^(https?:\/\/|mailto:|tel:|\/(?!\/)|#)/.test(s || '');
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const NO_PREFIX = /^\/(assets|api|admin|\.well-known)(\/|$)/;
+const IMG = /\.(jpe?g|png|webp|avif|gif)$/i;
+const slugify = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const nat = (a, b) => a.localeCompare(b, undefined, { numeric: true });
+
+// Drop-in project images: put files in assets/img/projects/<slug>/ and they are picked up without editing any JSON.
+//   cover.jpg (or desktop/main/hero)  -> main image        mobile.jpg (or phone)  -> phone screenshot
+//   before.jpg + after.jpg            -> before/after slider   1.jpg, 2.jpg, gallery-1.jpg ... -> draggable gallery
+// A single file named assets/img/projects/<slug>.jpg (and <slug>-mobile.jpg) also works.
+function autoAssets(p) {
+  const root = path.join(R, 'assets/img/projects'), url = f => '/assets/img/projects/' + f;
+  let top = [], inner = [];
+  try { top = fs.readdirSync(root).filter(f => IMG.test(f)); } catch (x) {}
+  try { inner = fs.readdirSync(path.join(root, p.slug)).filter(f => IMG.test(f)).sort(nat); } catch (x) {}
+  const find = (list, re, pre) => { const f = list.find(n => re.test(n.replace(IMG, ''))); return f ? url((pre || '') + f) : ''; };
+  const sub = p.slug + '/';
+  if (!p.image) p.image = find(inner, /^(cover|desktop|main|hero|image)$/i, sub) || find(top, new RegExp('^' + p.slug + '$', 'i'));
+  if (!p.mobileImage) p.mobileImage = find(inner, /^(mobile|phone)$/i, sub) || find(top, new RegExp('^' + p.slug + '-mobile$', 'i'));
+  if (!(p.beforeAfter && p.beforeAfter.before && p.beforeAfter.after)) {
+    const b = find(inner, /^before$/i, sub), a = find(inner, /^after$/i, sub);
+    if (b && a) p.beforeAfter = { before: b, after: a };
+  }
+  if (!Array.isArray(p.gallery) || !p.gallery.length) p.gallery = inner.filter(f => /^(\d+|gallery[-_ ]?\d*|shot[-_ ]?\d*)$/i.test(f.replace(IMG, ''))).map(f => url(sub + f));
+}
+
+// Inline icons (stroke style). Every shape gets pathLength="1" so CSS can "draw" it.
+const svg = (inner, size = 22) => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${inner.replace(/<(path|circle|rect|line|polyline|polygon)\b/g, '<$1 pathLength="1"')}</svg>`;
+const PATHS = [
+  '<path d="M12 3a9 9 0 1 0 0 18c1.2 0 2-.8 2-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H17a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10.5" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>',
+  '<path d="M8 8l-5 4 5 4"/><path d="M16 8l5 4-5 4"/><path d="M14 5l-4 14"/>',
+  '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>',
+  '<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>',
+  '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  '<path d="M20 11a8 8 0 0 0-14.9-3M4 5v4h4"/><path d="M4 13a8 8 0 0 0 14.9 3M20 19v-4h-4"/>',
+  '<path d="M9 3v5M15 3v5"/><path d="M6 8h12v3a6 6 0 0 1-12 0V8z"/><path d="M12 17v4"/>',
+  '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4 2.6-2.6z"/>'
+];
+const BAG = '<path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8a3 3 0 0 1 6 0"/>';
+const SOC = {
+  instagram: '<rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>',
+  linkedin: '<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>',
+  facebook: '<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>',
+  youtube: '<path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/>',
+  x: '<path d="M4 4l16 16M20 4L4 20"/>',
+  github: '<path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>'
+};
+const SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>';
+const MOON = '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
 
 function build() {
   const S_en = rd('site.json');
   const P_en = rd('projects.json');
+  P_en.forEach(p => { if (!p.slug) p.slug = slugify(p.title); autoAssets(p); });
   const arabicOn = S_en.arabic !== false;
   const S_ar = I.resolveSite(S_en, rdOpt('site.ar.json', {}), 'ar');
   const P_ar = I.mergeProjects(P_en, rdOpt('projects.ar.json', {}));
@@ -43,7 +91,7 @@ function build() {
   // Theme colours live in a generated stylesheet so pages need no inline <style> (strict CSP).
   const th = { background: '#FAF3E8', primary: '#2F5D50', accent: '#C8674A', surface: '#F1E6D3', text: '#2F5D50', ...(S_en.theme || {}) };
   for (const k of Object.keys(th)) if (!HEX.test(th[k])) th[k] = { background: '#FAF3E8', primary: '#2F5D50', accent: '#C8674A', surface: '#F1E6D3', text: '#2F5D50' }[k];
-  fs.writeFileSync(path.join(OUT, 'assets/css/theme.css'), `:root{--color-cream:${th.background};--color-forest:${th.primary};--color-terracotta:${th.accent};--color-terracotta-dark:color-mix(in srgb, ${th.accent} 78%, #000);--color-cream-deep:${th.surface};--color-line:${th.primary}33;--color-text:${th.text};color-scheme:light}body{color:var(--color-text)}\n`);
+  fs.writeFileSync(path.join(OUT, 'assets/css/theme.css'), `:root{--color-cream:${th.background};--color-forest:${th.primary};--color-terracotta:${th.accent};--color-terracotta-dark:color-mix(in srgb, ${th.accent} 78%, #000);--color-cream-deep:${th.surface};--color-line:${th.primary}33;--color-text:${th.text};--bg:${th.background};--primary:${th.primary};--accent:${th.accent};--surface:${th.surface};color-scheme:light}body{color:var(--color-text)}\n`);
 
   fs.writeFileSync(path.join(OUT, '.nojekyll'), '');
   if (fs.existsSync(path.join(R, 'CNAME'))) fs.copyFileSync(path.join(R, 'CNAME'), path.join(OUT, 'CNAME'));
@@ -75,24 +123,29 @@ function render(lang, S, P, ctx) {
   if (!S.showDemoProjects) P = P.filter(p => !p.demo);
   const feat = P.find(p => p.featured) || P[0];
   const list = a => (a && a.length ? `<ul class="list">${a.map(x => `<li>${e(x)}</li>`).join('')}</ul>` : '');
-  const socials = Object.entries(S.social || {}).filter(([, v]) => v);
+  const socials = Object.entries(S.social || {}).filter(([, v]) => v && safeUrl(v));
+  const soc = ([k, v]) => { const n = T['soc_' + k] || k[0].toUpperCase() + k.slice(1); return SOC[k] ? `<a class="soc soc-${e(k)}" href="${u(v)}" target="_blank" rel="noopener noreferrer" aria-label="${e(n)}" title="${e(n)}">${svg(SOC[k], 20)}<span class="sr"> ${e(T.newTab)}</span></a>` : `<a class="link" href="${u(v)}" target="_blank" rel="noopener noreferrer">${e(n)}</a>`; };
+  const eb = s => e(s).split(e(S.name)).join(`<span class="brand">${e(S.name)}</span>`);
   const CP = { title: 'Get in Touch', text: 'Have a project in mind? Fill out the form and we will get back to you.', submitLabel: 'Send inquiry', successMessage: 'Thank you. Your inquiry was sent and we will reply by email.', ...(S.contactPage || {}) };
   const contactChannels = Array.isArray(CP.channels) ? CP.channels : [];
   const CL = CP.labels, FT = S.footer;
   const extraFields = Array.isArray(CP.extraFields) ? CP.extraFields : [];
   const txt = key => { const v = nm(S.copy[key]); return v || (key === 'aboutPageText' ? S.description : ''); };
   const year = new Date().getFullYear();
+  // Strict CSP: no inline scripts/styles, nothing loaded from other sites except images; forms may only go to the configured endpoint.
+  const epOrigin = (() => { try { return new URL(ENDPOINT).origin; } catch (x) { return ''; } })();
+  const CSP = `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'${epOrigin ? ' ' + epOrigin : ''}; form-action 'self'${epOrigin ? ' ' + epOrigin : ''}; base-uri 'self'; object-src 'none'; manifest-src 'self'`;
 
   const logo = h => `<img src="/assets/img/logo.png" alt="${e(S.name)}" width="913" height="134" class="logo ${h}">`;
-  const media = (p, eager) => {
+  const media = (p, eager, zoom) => {
     const ini = e([...String(p.title || '').replace(/[^\p{L}\p{N} ]/gu, '').split(' ').filter(Boolean).map(w => [...w][0]).join('')].slice(0, 2).join('').toUpperCase());
-    return `<div class="media"><div class="ph" aria-hidden="true">${ini}</div>${p.image ? `<img src="${u(p.image)}" alt="${e(p.title)}${AR ? '' : ' storefront'}" ${eager ? '' : 'loading="lazy"'} decoding="async">` : ''}</div>`;
+    return `<div class="media"${zoom && p.image ? ' data-zoom data-cursor="+"' : ''}><div class="ph" aria-hidden="true">${ini}</div>${p.image ? `<img src="${u(p.image)}" alt="${e(p.title)}${AR ? '' : ' storefront'}" ${eager ? '' : 'loading="lazy"'} decoding="async">` : ''}</div>`;
   };
   const card = p => `<article class="card" data-cat="${e(p.category)}" data-text="${e([p.title, p.client, p.summary, p.category].join(' ').toLowerCase())}">
-<a class="card-link" href="${u('/work/' + p.slug + '/')}"><div class="folder">${media(p)}<div class="front"><p class="meta"><span class="cat">${e(p.category)}</span>${p.demo ? `<span class="badge">${e(T.demo)}</span>` : ''}</p><h3>${e(p.title)}</h3><p>${e(p.summary)}</p><span class="more">${e(T.viewProject)} <span aria-hidden="true">${arrow}</span></span></div></div></a>${p.url ? `<a class="live" href="${u(p.url)}" target="_blank" rel="noopener noreferrer">${e(T.visitLive)} <span aria-hidden="true">${arrowUp}</span><span class="sr"> ${e(T.newTab)}</span></a>` : ''}</article>`;
+<a class="card-link" data-cursor="${e(T.cursorView)}" href="${u('/work/' + p.slug + '/')}"><div class="folder">${media(p)}<div class="front"><p class="meta"><span class="cat">${e(p.category)}</span>${p.demo ? `<span class="badge">${e(T.demo)}</span>` : ''}</p><h3>${e(p.title)}</h3><p>${e(p.summary)}</p><span class="more">${e(T.viewProject)} <span aria-hidden="true">${arrow}</span></span></div></div></a>${p.url ? `<a class="live" href="${u(p.url)}" target="_blank" rel="noopener noreferrer">${e(T.visitLive)} <span aria-hidden="true">${arrowUp}</span><span class="sr"> ${e(T.newTab)}</span></a>` : ''}</article>`;
   const btn = (b, cls) => `<a class="btn ${cls || ''}" href="${u(b.href)}">${e(b.label)}</a>`;
 
-  function page({ url, title, desc, body, img, ld, noindex }) {
+  function page({ url, title, desc, body, img, ld, noindex, trail }) {
     const full = title ? `${title} — ${NAME}` : iso(S.title);
     const d = desc || S.description;
     const full_url = SITE + pre + url;
@@ -105,26 +158,30 @@ function render(lang, S, P, ctx) {
     const foot = `<footer class="foot"><div class="wrap foot-grid"><div><a href="${u('/')}" aria-label="${e(nm(T.homeAria))}">${logo('foot-logo')}</a><p class="muted">${e(S.description)}</p></div>
 <nav aria-label="${e(T.ariaFooter)}"><h2 class="fh">${e(FT.navigationTitle)}</h2>${S.nav.map(n => `<a href="${u(n.href)}">${e(n.label)}</a>`).join('')}</nav>
 <nav aria-label="${e(T.ariaServices)}"><h2 class="fh">${e(FT.servicesTitle)}</h2>${S.services.slice(0, 5).map(s => `<a href="${u('/services/')}">${e(s.title)}</a>`).join('')}</nav>
-<div><h2 class="fh">${e(FT.contactTitle)}</h2>${S.email ? `<a href="mailto:${e(S.email)}" class="ltr">${e(S.email)}</a>` : `<a href="${u('/contact/')}">${e(T.sendInquiryLink)}</a>`}${socials.map(([k, v]) => `<a href="${u(v)}" rel="noopener noreferrer" target="_blank">${e(k[0].toUpperCase() + k.slice(1))}</a>`).join('')}</div></div>
+<div><h2 class="fh">${e(FT.contactTitle)}</h2>${S.email ? `<a href="mailto:${e(S.email)}" class="ltr">${e(S.email)}</a>` : `<a href="${u('/contact/')}">${e(T.sendInquiryLink)}</a>`}${socials.length ? `<p class="follow">${e(T.followUs)}</p><div class="socs">${socials.map(soc).join('')}</div>` : ''}</div></div>
 <div class="wrap sub"><span>&copy; ${year} <span dir="auto">${e(S.name)}</span>. ${e(FT.copyright)}</span>${(S.legal || []).map(l => `<a href="${u(l.href)}">${e(l.label)}</a>`).join('')}</div></footer>`;
-    return `<!doctype html><html lang="${lang}" dir="${AR ? 'rtl' : 'ltr'}"${arabicOn ? ' data-ar' : ''} data-base="${e(BASE)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+    return `<!doctype html><html lang="${lang}" dir="${AR ? 'rtl' : 'ltr'}"${arabicOn ? ' data-ar' : ''} data-base="${e(BASE)}" data-close="${e(T.closeZoom)}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="${e(CSP)}"><meta name="referrer" content="strict-origin-when-cross-origin">
 <title>${e(full)}</title><meta name="description" content="${e(d)}">${noindex ? '<meta name="robots" content="noindex">' : ''}${canon}${alts}${og}
-<meta name="theme-color" content="${e(HEX.test(S_en.theme && S_en.theme.background) ? S_en.theme.background : '#FAF3E8')}"><link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml"><script src="/assets/js/boot.js"></script><link rel="stylesheet" href="/assets/css/styles.css"><link rel="stylesheet" href="/assets/css/theme.css">${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>` : ''}</head>
-<body><a class="skip" href="#main">${e(T.skip)}</a>
+<meta name="theme-color" content="${e(HEX.test(S_en.theme && S_en.theme.background) ? S_en.theme.background : '#FAF3E8')}"><link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml"><script src="/assets/js/boot.js"></script><link rel="preload" href="/assets/fonts/cairo-latin.woff" as="font" type="font/woff" crossorigin>${AR ? '<link rel="preload" href="/assets/fonts/cairo-arabic.woff" as="font" type="font/woff" crossorigin>' : ''}<link rel="stylesheet" href="/assets/css/styles.css"><link rel="stylesheet" href="/assets/css/fx.css"><link rel="stylesheet" href="/assets/css/theme.css">${ld ? `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>` : ''}</head>
+<body><div class="curtain" aria-hidden="true"><i></i><i></i><img src="/assets/img/logo-light.png" alt="" width="913" height="134" decoding="async"></div><a class="skip" href="#main">${e(T.skip)}</a>
+<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false"><filter id="ripple" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="0" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
 <header class="head"><div class="wrap bar"><a href="${u('/')}" aria-label="${e(nm(T.homeAria))}">${logo('head-logo')}</a>
-<button class="menu" aria-expanded="false" aria-controls="nav"><span class="sr">${e(T.menu)}</span><i></i></button>
-<nav id="nav" class="nav" aria-label="${e(T.ariaMain)}">${nav}${switcher}${btn(S.headerCta, 'sm')}</nav></div></header>
-<main id="main">${body}</main>${foot}<script src="/assets/js/main.js" defer></script></body></html>`;
+<div class="bar-end"><nav id="nav" class="nav" aria-label="${e(T.ariaMain)}">${nav}${switcher}${btn(S.headerCta, 'sm')}</nav>
+<button class="theme" type="button" aria-label="${e(T.themeAria)}"><span class="i-sun">${svg(SUN, 20)}</span><span class="i-moon">${svg(MOON, 20)}</span></button>
+<button class="menu" aria-expanded="false" aria-controls="nav"><span class="sr">${e(T.menu)}</span><i></i></button></div></div></header>
+<main id="main"${trail ? ' data-trail' : ''}>${body}</main>${foot}<script src="/assets/js/main.js" defer></script><script src="/assets/js/fx.js" defer></script></body></html>`;
   }
 
   const FL = ['f1', 'f2 c', 'f3 c', 'f4', 'f5', 'f6 c'];
   const floaters = () => `<div class="floaters" aria-hidden="true">${FL.map(c => `<i class="tile ${c}">${ICON}</i>`).join('')}</div>`;
-  const cta = () => `<section class="band dark">${floaters()}<div class="wrap center"><h2>${e(S.cta.title)}</h2><p class="lead">${e(S.cta.text)}</p>${btn(S.cta, 'inv')}</div></section>`;
+  const swapWords = (S.cta.swap && Array.isArray(S.cta.swap.words) ? S.cta.swap.words : []).filter(w => typeof w === 'string' && w.trim());
+  const swap = swapWords.length ? `<p class="swap"><span>${e(S.cta.swap.prefix || '')}</span> <span class="swapw" data-words="${e(JSON.stringify(swapWords))}"><b>${e(swapWords[0])}</b></span></p>` : '';
+  const cta = () => `<section class="band dark"><canvas class="liquid" aria-hidden="true"></canvas>${floaters()}<div class="wrap center"><h2 class="wave">${e(S.cta.title)}</h2>${swap}<p class="lead">${e(S.cta.text)}</p>${btn(S.cta, 'inv')}</div></section>`;
   const head = (t, sub) => `<div class="sec-head"><h2>${e(t)}</h2>${sub ? `<p class="lead">${e(sub)}</p>` : ''}</div>`;
-  const steps = () => `<ol class="steps">${S.process.map((s, i) => `<li><span class="num">${String(i + 1).padStart(2, '0')}</span><h3>${e(s.title)}</h3><p>${e(s.desc)}</p></li>`).join('')}</ol>`;
+  const steps = cls => `<ol class="steps${cls ? ' ' + cls : ''}">${S.process.map((s, i) => `<li><span class="num">${String(i + 1).padStart(2, '0')}</span><h3>${e(s.title)}</h3><p>${e(s.desc)}</p></li>`).join('')}</ol>`;
   const pageHero = (t, sub) => `<section class="wrap phero"><h1>${e(t)}</h1>${sub ? `<p class="lead">${e(sub)}</p>` : ''}</section>`;
-  const ICON = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>';
-  const ico = `<span class="ico">${ICON}</span>`;
+  const ICON = svg(BAG);
+  const ico = i => `<span class="ico" aria-hidden="true">${svg(PATHS[i % PATHS.length])}</span>`;
   const out = {};
   const K = url => pre + url;
 
@@ -136,16 +193,32 @@ function render(lang, S, P, ctx) {
   const heroPhoneMedia = { ...(feat || { title: 'dev.commit' }), image: heroMobileImage };
   const heroVisual = `<div class="visual"><i class="shape s1"></i><i class="shape s2"></i><div class="laptop"><div class="screen">${media(heroMedia, true)}</div><div class="base"></div></div>${(feat || heroDesktopImage || heroMobileImage) ? `<div class="phone">${media(heroPhoneMedia, true)}</div>` : ''}</div>`;
   const tests = (S.testimonials || []).filter(t => t.approved && t.quote);
+  const tw = (H.typed && Array.isArray(H.typed.words) ? H.typed.words : []).filter(w => typeof w === 'string' && w.trim());
+  const typed = tw.length ? `<p class="typed"><span class="tp">${e(H.typed.prefix || '')}</span> <span class="tw" data-words="${e(JSON.stringify(tw))}">${e(tw[0])}</span><i class="caret" aria-hidden="true"></i></p>` : '';
+  const fmt = n => n.toLocaleString(AR ? 'ar-EG' : 'en-US');
+  // Spotlight band (replaces the old counters): a cycling list of real selling points + a floating brand visual.
+  const SP = S.spotlight || {};
+  const spItems = (Array.isArray(SP.items) ? SP.items : []).filter(x => x && x.value && x.label);
+  const spotHtml = spItems.length ? `<section class="band dark spotband" aria-label="${e(T.spotAria)}"><div class="wrap spot-grid"><div class="spot-txt">${SP.eyebrow ? `<p class="eyebrow lt">${e(SP.eyebrow)}</p>` : ''}${SP.title ? `<h2>${e(SP.title)}</h2>` : ''}${SP.text ? `<p class="lead">${e(SP.text)}</p>` : ''}<ul class="spot-list">${spItems.map((x, i) => `<li class="spot-it${i === 0 ? ' on' : ''}"><button type="button" class="spot-b" aria-pressed="${i === 0}"><b>${e(x.value)}</b><span class="spot-l">${e(x.label)}</span><span class="spot-d">${e(x.desc || '')}</span></button><i class="spot-bar" aria-hidden="true"></i></li>`).join('')}</ul></div><div class="spot-vis" aria-hidden="true"><i class="ring r1"></i><i class="ring r2"></i><i class="ring r3"></i><i class="dot d1"></i><i class="dot d2"></i><i class="dot d3"></i><div class="orb"><img src="/assets/img/logo-light.png" alt="" width="913" height="134" decoding="async"></div><div class="chip"><b>${e(spItems[0].value)}</b><span>${e(spItems[0].label)}</span></div></div></div></section>` : '';
+  // "More love from our clients": cards come from content/site.json -> testimonials (only approved ones with a quote).
+  // While there are none, clearly-labelled placeholder cards show only when showDemoProjects is on; a live site hides the section.
+  const initials = n => e([...String(n || '').replace(/[^\p{L}\p{N} ]/gu, '').split(' ').filter(Boolean).map(w => [...w][0]).join('')].slice(0, 2).join('').toUpperCase());
+  const loveCard = t => { const r = Math.round(Number(t.rating)); const stars = r >= 1 && r <= 5 ? `<div class="stars" role="img" aria-label="${r} / 5">${'★'.repeat(r)}<span>${'★'.repeat(5 - r)}</span></div>` : ''; const who = [t.role, t.company].filter(Boolean).join(AR ? ' – ' : ' · '); const av = t.image && safeUrl(t.image) && IMG.test(t.image) ? `<img class="av" src="${u(t.image)}" alt="" width="44" height="44" loading="lazy" decoding="async">` : `<span class="av" aria-hidden="true">${initials(t.name)}</span>`; return `<figure class="love-c">${stars}<blockquote>${e(t.quote)}</blockquote><figcaption>${av}<span><b>${e(t.name)}</b>${who ? `<small>${e(who)}</small>` : ''}</span></figcaption></figure>`; };
+  const loveDemo = [0, 1, 2].map(() => `<figure class="love-c is-demo"><div class="stars" aria-hidden="true">★★★★★</div><blockquote>${e(T.loveEmpty)}</blockquote><figcaption><span class="av" aria-hidden="true">+</span><span><b>${e(T.loveEmptyName)}</b><small>${e(T.loveEmptyRole)}</small></span></figcaption></figure>`).join('');
+  const loveHtml = S.sections.testimonials !== false && (tests.length || S.showDemoProjects) ? `<section class="wrap sec love" aria-labelledby="love-h"><div class="sec-head"><p class="eyebrow"><span class="arr" aria-hidden="true">↳</span> ${e(T.loveEyebrow)}</p><h2 id="love-h">${e(T.loveTitle)}</h2></div><div class="love-grid">${tests.length ? tests.map(loveCard).join('') : loveDemo}</div></section>` : '';
+  const big = S.bigText ? (e(S.bigText) + ' ').repeat(6) : '';
+  const bigHtml = big ? `<section class="bigtext" aria-hidden="true"><div class="bt bt-a"><span>${big}</span></div><div class="bt bt-b"><span>${big}</span></div></section>` : '';
+  const pad = n => String(n).padStart(2, '0');
   out[K('/')] = page({
-    url: '/', ld: SITE ? { '@context': 'https://schema.org', '@type': 'Organization', name: S.name, url: SITE, logo: SITE + '/assets/img/logo.png', ...(socials.length ? { sameAs: socials.map(x => x[1]) } : {}) } : null,
-    body: `<section class="wrap hero"><div><p class="eyebrow">${e(H.eyebrow)}</p><h1>${e(H.title).replace(/(\S+)$/, '<span class="acc">$1</span>')}</h1><p class="lead">${e(H.text)}</p><div class="row">${btn({ label: H.primary.label + ' ' + arrow, href: H.primary.href })}${btn(H.secondary, 'ghost')}</div></div>${heroVisual}</section>
-${P.length ? `<section class="wrap sec"><div class="sec-head split"><div><p class="eyebrow">${e(txt('featuredEyebrow'))}</p><h2>${e(txt('featuredTitle'))}</h2></div><a class="link" href="${u('/work/')}">${e(T.viewAll)} <span aria-hidden="true">${arrow}</span></a></div><div class="grid">${P.slice(0, 3).map(card).join('')}</div></section>` : ''}
+    url: '/', trail: true, ld: SITE ? { '@context': 'https://schema.org', '@type': 'Organization', name: S.name, url: SITE, logo: SITE + '/assets/img/logo.png', ...(socials.length ? { sameAs: socials.map(x => x[1]) } : {}) } : null,
+    body: `<div class="herowrap"><div class="hero-bg" aria-hidden="true"><canvas class="dots"></canvas><i class="aurora a1"></i><i class="aurora a2"></i></div><section class="wrap hero"><div><p class="eyebrow">${e(H.eyebrow)}</p><h1>${e(H.title).replace(/(\S+)$/, '<span class="acc">$1</span>')}</h1>${typed}<p class="lead">${e(H.text)}</p><div class="row">${btn({ label: H.primary.label + ' ' + arrow, href: H.primary.href })}${btn(H.secondary, 'ghost')}</div></div>${heroVisual}</section></div>
+${P.length ? `<section class="wrap sec"><div class="sec-head split"><div><p class="eyebrow">${eb(txt('featuredEyebrow'))}</p><h2>${e(txt('featuredTitle'))}</h2></div><a class="link" href="${u('/work/')}">${e(T.viewAll)} <span aria-hidden="true">${arrow}</span></a></div><div class="grid">${P.slice(0, 3).map(card).join('')}</div></section>` : ''}
 ${S.statement ? `<section class="wrap statement"><p class="reveal-words">${S.statement.split(' ').map(w => `<span>${e(w)}</span>`).join(' ')}</p></section>` : ''}
-${S.marquee?.enabled !== false ? (() => { const items = (S.marquee?.items || []).filter(x => typeof x === 'string' && x.trim()); const labels = items.length ? items : S.services.map(s => s.title); const speed = ['slow', 'normal', 'fast'].includes(S.marquee?.speed) ? S.marquee.speed : 'normal'; const track = labels.map(x => `<span>${e(x)}</span>`).join(''); return `<div class="marquee speed-${speed}" aria-hidden="true"><div>${track}${track}</div></div>`; })() : ''}
-<section class="band dark"><div class="wrap"><div class="two"><div><p class="eyebrow lt">${e(txt('servicesEyebrow'))}</p><h2>${e(S.servicesIntro.title)}</h2></div><p class="lead">${e(S.servicesIntro.text)}</p></div><div class="svc-grid">${S.services.map(s => `<div class="svc">${ico}<div><h3>${e(s.title)}</h3><p>${e(s.desc)}</p></div></div>`).join('')}</div></div></section>
-<section class="wrap sec"><div class="two"><div><p class="eyebrow">${e(txt('processEyebrow'))}</p><h2>${e(S.processIntro.title)}</h2></div><p class="lead">${e(S.processIntro.text)}</p></div>${steps()}</section>
-${S.sections.why ? `<section class="wrap sec"><p class="eyebrow">${e(txt('whyEyebrow'))}</p><h2>${e(S.whyTitle)}</h2><div class="feats">${S.why.map(w => `<div>${ico}<div><h3>${e(w.title)}</h3><p>${e(w.desc)}</p></div></div>`).join('')}</div></section>` : ''}
-${S.sections.testimonials && tests.length ? `<section class="wrap sec">${head(T.kindWords)}<div class="quotes">${tests.map(t => `<figure><blockquote>${e(t.quote)}</blockquote><figcaption>${e(t.name)}${t.role || t.company ? `${AR ? '،' : ','} ${e([t.role, t.company].filter(Boolean).join(AR ? ' – ' : ' at '))}` : ''}</figcaption></figure>`).join('')}</div></section>` : ''}
+${spotHtml}${bigHtml}
+<section class="band dark"><div class="wrap"><div class="two"><div><p class="eyebrow lt">${eb(txt('servicesEyebrow'))}</p><h2>${e(S.servicesIntro.title)}</h2></div><p class="lead">${e(S.servicesIntro.text)}</p></div><div class="svc-grid">${S.services.map((s, i) => `<div class="svc">${ico(i)}<div><h3>${e(s.title)}</h3><p>${e(s.desc)}</p></div></div>`).join('')}</div></div></section>
+<section class="wrap sec pinsec"><div class="pin-l"><div class="pin-sticky"><p class="eyebrow">${eb(txt('processEyebrow'))}</p><h2>${e(S.processIntro.title)}</h2><p class="lead">${e(S.processIntro.text)}</p><div class="pin-count" aria-hidden="true"><b>01</b><span>/${pad(S.process.length)}</span></div></div></div>${steps('steps-v')}</section>
+${S.sections.why ? `<section class="wrap sec"><p class="eyebrow">${eb(txt('whyEyebrow'))}</p><h2>${e(S.whyTitle)}</h2><div class="feats">${S.why.map((w, i) => `<div>${ico(i + 2)}<div><h3>${e(w.title)}</h3><p>${e(w.desc)}</p></div></div>`).join('')}</div></section>` : ''}
+${loveHtml}
 ${cta()}`
   });
 
@@ -153,20 +226,25 @@ ${cta()}`
   out[K('/work/')] = page({
     url: '/work/', title: T.pageWork, desc: nm(T.descWork),
     body: `${pageHero(txt('workPageTitle'), txt('workPageText'))}<section class="wrap sec">
-${P.length ? `<div class="filters"><label class="sr" for="q">${e(T.searchProjects)}</label><input id="q" type="search" placeholder="${e(T.searchProjects)}"><div role="group" aria-label="${e(T.ariaFilter)}"><button class="chip on" data-f="">${e(T.all)}</button>${S.categories.filter(c => P.some(p => p.category === c)).map(c => `<button class="chip" data-f="${e(c)}">${e(c)}</button>`).join('')}</div></div>
+${P.length ? `<div class="filters"><label class="sr" for="q">${e(T.searchProjects)}</label><input id="q" type="search" placeholder="${e(T.searchProjects)}"><div role="group" aria-label="${e(T.ariaFilter)}"><button class="chip on" data-f="">${e(T.all)}</button>${[...new Set([...(S.categories || []), ...P.map(p => p.category)])].filter(c => c && P.some(p => p.category === c)).map(c => `<button class="chip" data-f="${e(c)}">${e(c)}</button>`).join('')}</div></div>
 <div class="grid" id="grid">${P.map(card).join('')}</div><p id="empty" class="muted" hidden>${e(T.noMatch)}</p>` : `<p class="muted">${e(T.noProjects)} <a class="link" href="${u('/contact/')}">${e(T.getInTouch)}</a>.</p>`}</section>${cta()}`
   });
   P.forEach(p => {
     const rel = P.filter(x => x !== p && x.category === p.category).slice(0, 2);
     const blk = (t, c) => (c ? `<section><h2>${e(t)}</h2>${c}</section>` : '');
+    const ba = p.beforeAfter && p.beforeAfter.before && p.beforeAfter.after ? p.beforeAfter : null;
+    const baHtml = ba ? `<section class="wrap ba-sec"><h2>${e(T.beforeAfter)}</h2><div class="ba" dir="ltr" data-ba><div class="media ba-b"><img src="${u(ba.before)}" alt="${e(T.before)}" loading="lazy" decoding="async"></div><div class="media ba-a"><img src="${u(ba.after)}" alt="${e(T.after)}" loading="lazy" decoding="async"></div><span class="tag t-b">${e(T.before)}</span><span class="tag t-a">${e(T.after)}</span><i class="ba-line" aria-hidden="true"></i><i class="ba-knob" aria-hidden="true"></i><input type="range" min="0" max="100" value="50" aria-label="${e(T.compareAria)}"></div></section>` : '';
+    const gal = (Array.isArray(p.gallery) ? p.gallery : []).map(g => (typeof g === 'string' ? { src: g } : g)).filter(g => g && g.src && safeUrl(g.src));
+    const galHtml = gal.length ? `<section class="wrap gal-sec"><h2>${e(T.gallery)}</h2><div class="gal" data-drag tabindex="0" role="group" aria-label="${e(T.gallery)}">${gal.map((g, i) => `<figure class="gal-item"><div class="media" data-zoom data-cursor="+"><img src="${u(g.src)}" alt="${e(g.alt || p.title + ' ' + (i + 1))}" loading="lazy" decoding="async" draggable="false"></div></figure>`).join('')}</div><p class="hint muted">${e(T.dragHint)}</p></section>` : '';
     out[K(`/work/${p.slug}/`)] = page({
       url: `/work/${p.slug}/`, title: p.title, desc: p.summary, img: p.image || undefined,
       body: `<section class="wrap phero"><nav class="crumb" aria-label="${e(T.ariaBreadcrumb)}"><a href="${u('/work/')}">${e(T.crumbWork)}</a> / ${e(p.title)}</nav><p class="eyebrow">${e(p.category)}${p.demo ? ' · ' + e(T.demo) : ''}</p><h1>${e(p.title)}</h1><p class="lead">${e(p.summary)}</p>${p.url ? `<p><a class="btn" href="${u(p.url)}" target="_blank" rel="noopener noreferrer">${e(T.visitLive)} ${arrowUp}<span class="sr"> ${e(T.newTab)}</span></a></p>` : ''}</section>
-<div class="wrap">${media(p, true)}</div>
+<div class="wrap">${media(p, true, true)}</div>
 <div class="wrap case">${blk(T.overview, p.overview ? `<p>${e(p.overview)}</p>` : '')}
 <aside class="facts">${p.client ? `<h3>${e(T.client)}</h3><p>${e(p.client)}</p>` : ''}${p.services?.length ? `<h3>${e(T.servicesH)}</h3>${list(p.services)}` : ''}${p.tech?.length ? `<h3>${e(T.builtWith)}</h3>${list(p.tech)}` : ''}</aside>
 ${blk(T.goals, list(p.goals))}${blk(T.challenges, list(p.challenges))}${blk(T.approach, p.approach ? `<p>${e(p.approach)}</p>` : '')}${blk(T.outcomes, list(p.outcomes))}
-${p.mobileImage ? `<section><h2>${e(T.onMobile)}</h2><div class="shot">${media({ ...p, image: p.mobileImage })}</div></section>` : ''}</div>
+${p.mobileImage ? `<section><h2>${e(T.onMobile)}</h2><div class="shot">${media({ ...p, image: p.mobileImage }, false, true)}</div></section>` : ''}</div>
+${baHtml}${galHtml}
 ${rel.length ? `<section class="wrap sec">${head(T.related)}<div class="grid">${rel.map(card).join('')}</div></section>` : ''}${cta()}`
     });
   });
@@ -174,7 +252,7 @@ ${rel.length ? `<section class="wrap sec">${head(T.related)}<div class="grid">${
   // SERVICES
   out[K('/services/')] = page({
     url: '/services/', title: T.pageServices, desc: nm(T.descServices),
-    body: `${pageHero(txt('servicesPageTitle'), txt('servicesPageText'))}<section class="wrap sec split-svc"><div class="tabs" role="tablist" aria-label="${e(T.ariaServices)}">${S.services.map((s, i) => `<button type="button" role="tab" id="t${i}" aria-controls="p${i}" aria-selected="${i === 0}" class="tab${i === 0 ? ' on' : ''}">${ico}${e(s.title)}</button>`).join('')}</div><div>${S.services.map((s, i) => `<article class="panel" id="p${i}" role="tabpanel" aria-labelledby="t${i}"><h2>${e(s.title)}</h2><p>${e(s.desc)}</p><p class="val">${e(s.value)}</p><h3>${e(T.included)}</h3>${list(s.deliverables)}${btn({ label: T.startProject, href: '/contact/' })}</article>`).join('')}</div></section>
+    body: `${pageHero(txt('servicesPageTitle'), txt('servicesPageText'))}<section class="wrap sec split-svc"><div class="tabs" role="tablist" aria-label="${e(T.ariaServices)}">${S.services.map((s, i) => `<button type="button" role="tab" id="t${i}" aria-controls="p${i}" aria-selected="${i === 0}" class="tab${i === 0 ? ' on' : ''}">${ico(i)}${e(s.title)}</button>`).join('')}</div><div>${S.services.map((s, i) => `<article class="panel" id="p${i}" role="tabpanel" aria-labelledby="t${i}"><h2>${e(s.title)}</h2><p>${e(s.desc)}</p><p class="val">${e(s.value)}</p><h3>${e(T.included)}</h3>${list(s.deliverables)}${btn({ label: T.startProject, href: '/contact/' })}</article>`).join('')}</div></section>
 <section class="band tint"><div class="wrap">${head(T.workflow)}${steps()}</div></section>
 <section class="wrap sec">${head(T.waysToWork)}<div class="why light">${S.engagements.map(g => `<div><h3>${e(g.title)}</h3><p>${e(g.desc)}</p></div>`).join('')}</div></section>
 ${S.sections.faq ? `<section class="wrap sec narrow">${head(T.faqTitle)}${S.faq.map(f => `<details><summary>${e(f.q)}</summary><p>${e(f.a)}</p></details>`).join('')}</section>` : ''}${cta()}`
@@ -185,7 +263,7 @@ ${S.sections.faq ? `<section class="wrap sec narrow">${head(T.faqTitle)}${S.faq.
   const blk2 = (t, c) => `<section><h2>${e(t)}</h2><p>${e(c)}</p></section>`;
   out[K('/about/')] = page({
     url: '/about/', title: T.pageAbout, desc: nm(T.descAbout),
-    body: `${pageHero(txt('aboutPageTitle'), txt('aboutPageText'))}<section class="wrap sec"><div class="cols3">${[[T.aboutMission, A.mission], [T.aboutPhilosophy, A.design + ' ' + A.development], [T.aboutApproach, A.approach]].map(([t, c]) => blk2(t, c)).join('')}</div></section>
+    body: `<section class="wrap phero phero-split"><div><h1>${e(txt('aboutPageTitle'))}</h1>${txt('aboutPageText') ? `<p class="lead">${e(txt('aboutPageText'))}</p>` : ''}</div><div class="scene" aria-hidden="true"><svg class="blob" viewBox="0 0 200 200"><path d="M100,20 C150,18 182,58 180,102 C178,150 140,182 98,180 C54,178 20,146 20,100 C20,56 56,22 100,20 Z"><animate attributeName="d" dur="11s" repeatCount="indefinite" values="M100,20 C150,18 182,58 180,102 C178,150 140,182 98,180 C54,178 20,146 20,100 C20,56 56,22 100,20 Z;M104,16 C158,30 186,70 172,116 C160,160 126,186 86,178 C40,170 14,128 26,84 C36,44 70,10 104,16 Z;M96,24 C140,12 190,50 182,100 C176,146 150,170 104,184 C58,196 18,150 18,104 C18,60 58,34 96,24 Z;M100,20 C150,18 182,58 180,102 C178,150 140,182 98,180 C54,178 20,146 20,100 C20,56 56,22 100,20 Z"/></path></svg><div class="cube">${[0, 1, 2, 3, 4, 5].map(i => `<i class="face f${i}">${svg(PATHS[i], 38)}</i>`).join('')}</div></div></section><section class="wrap sec"><div class="cols3">${[[T.aboutMission, A.mission], [T.aboutPhilosophy, A.design + ' ' + A.development], [T.aboutApproach, A.approach]].map(([t, c]) => blk2(t, c)).join('')}</div></section>
 ${(S.team || []).length ? `<section class="wrap sec">${head(T.team)}<div class="why light">${S.team.map(m => `<div><h3>${e(m.name)}</h3><p>${e(m.role)}</p></div>`).join('')}</div></section>` : ''}
 <section class="wrap sec"><div class="banner"><h2>${e(T.letsBuild)}</h2><a class="btn inv" href="${u('/work/')}">${e(T.exploreWork)}</a></div></section>`
   });
@@ -198,7 +276,7 @@ ${(S.team || []).length ? `<section class="wrap sec">${head(T.team)}<div class="
   const E = e;
   out[K('/contact/')] = page({
     url: '/contact/', title: T.pageContact, desc: T.descContact,
-    body: `${pageHero(CP.title, CP.text)}<section class="wrap sec contact"><aside class="cinfo"><h2>${e(CP.emailHeading || T.contactEmail)}</h2>${S.email ? `<p><a class="link ltr" href="mailto:${e(S.email)}">${e(S.email)}</a></p>` : `<p class="muted">${e(T.useFormReply)}</p>`}${socials.map(([k, v]) => `<p><a class="link" href="${u(v)}" rel="noopener noreferrer" target="_blank">${e(k[0].toUpperCase() + k.slice(1))}</a></p>`).join('')}${contactChannels.map(c => `<p><a class="link" href="${u(c.href || '#')}" ${/^https?:/.test(c.href || '') ? 'target="_blank" rel="noopener noreferrer"' : ''}>${e(c.label)}${c.value ? ': ' + e(c.value) : ''}</a></p>`).join('')}</aside><form id="inquiry" method="post" action="${ENDPOINT ? u(ENDPOINT) : '#'}" ${ENDPOINT || !S.email ? '' : `data-mailto="${e(S.email)}"`} ${ENDPOINT || S.email ? '' : 'data-off'} data-m-mailto="${E(T.msgMailto)}" data-m-required="${E(T.msgRequired)}" data-m-sending="${E(T.msgSending)}" data-m-error="${E(T.msgError)}" novalidate>
+    body: `${pageHero(CP.title, CP.text)}<section class="wrap sec contact"><aside class="cinfo"><h2>${e(CP.emailHeading || T.contactEmail)}</h2>${S.email ? `<p><a class="link ltr" href="mailto:${e(S.email)}">${e(S.email)}</a></p>` : `<p class="muted">${e(T.useFormReply)}</p>`}${socials.length ? `<div class="socs">${socials.map(soc).join('')}</div>` : ''}${contactChannels.map(c => `<p><a class="link" href="${u(c.href || '#')}" ${/^https?:/.test(c.href || '') ? 'target="_blank" rel="noopener noreferrer"' : ''}>${e(c.label)}${c.value ? ': ' + e(c.value) : ''}</a></p>`).join('')}</aside><form id="inquiry" method="post" action="${ENDPOINT ? u(ENDPOINT) : '#'}" ${ENDPOINT || !S.email ? '' : `data-mailto="${e(S.email)}"`} ${ENDPOINT || S.email ? '' : 'data-off'} data-m-mailto="${E(T.msgMailto)}" data-m-required="${E(T.msgRequired)}" data-m-sending="${E(T.msgSending)}" data-m-error="${E(T.msgError)}" novalidate>
 ${ENDPOINT ? '' : S.email ? `<p class="note">${e(T.formMailto)}</p>` : `<p class="note">${e(T.formOff)} ${S.email ? `${e(T.emailUsPrefix)} <a class="link ltr" href="mailto:${e(S.email)}">${e(S.email)}</a> ${e(T.emailUsSuffix)}` : e(T.formAddEndpoint)}</p>`}
 <input type="hidden" name="lang" value="${lang}">
 ${fld('name', e(CL.name), '<input id="name" name="name" autocomplete="name" maxlength="120" required>', 1)}

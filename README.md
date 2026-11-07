@@ -1,85 +1,68 @@
-# `<dev.commit>` — Static Portfolio Website
+# `<dev.commit>` — نسخة Frontend فقط (جاهزة لـ GitHub Pages)
 
-A bilingual (English / Arabic) portfolio site for a Shopify design and development studio. It is a **front-end only** site: no server, no admin panel, no database. A small Node script turns the content files into plain HTML, CSS and JS, ready for GitHub Pages.
+نفس الموقع بنفس الألوان والتصميم والأنيميشن والأزرار واللغتين (عربي/إنجليزي)، لكن **بدون باك إند**: مفيش سيرفر ولا لوحة أدمن ولا قاعدة بيانات. الموقع بيتبني ملفات HTML/CSS/JS ثابتة.
 
-## Quick start
+## النشر على GitHub Pages (تلقائي)
+1. اعمل Repository جديد على GitHub وارفع كل محتويات المجلد ده (بما فيه `.github`).
+2. من **Settings → Pages** اختار **Source: GitHub Actions**.
+3. أي push على فرع `main` هيبني الموقع وينشره تلقائيًا على `https://USERNAME.github.io/REPO/`.
+   (لو اسم الـ repo هو `USERNAME.github.io` هيشتغل على الجذر مباشرة.)
 
-Requires **Node 18+**. There is no `npm install` step.
-
+## تشغيل محلي
 ```bash
-npm run dev     # http://localhost:3000, rebuilds on changes to content/ or assets/
-npm run build   # outputs the finished site to dist/
+npm run dev     # http://localhost:3000  (بيعيد البناء تلقائيًا عند تعديل content أو assets)
+npm run build   # بيطلّع المجلد dist/
 ```
+محتاج Node 18+ فقط، ومفيش `npm install`.
 
-## Project structure
+## إضافة مشروع جديد (3 خطوات)
+1. شغّل الأمر ده (بيعمل المشروع ومجلد صوره):
+   ```bash
+   npm run add-project -- "اسم المشروع بالإنجليزي" --cat "Shopify Store Design" --url https://موقع-العميل.com --ar "الاسم بالعربي"
+   ```
+2. حط الصور في المجلد `assets/img/projects/<slug>/` بالأسماء دي وهتتعرف عليها لوحدها (من غير ما تكتب مسارات):
+   - `cover.jpg` الصورة الرئيسية، و`mobile.jpg` صورة الموبايل (اختياري)
+   - `before.jpg` + `after.jpg` بيظهروا كسلايدر "قبل / بعد" (اختياري)
+   - `1.jpg` و`2.jpg` و`3.jpg` … بتظهر كمعرض أفقي بالسحب، وبالضغط على أي صورة بتتكبّر (اختياري)
+3. املأ النصوص (`overview`, `goals`, `challenges`, `approach`, `tech`, `outcomes`) في `content/projects.json`، والترجمة العربية في `content/projects.ar.json` تحت نفس الـ slug، وبعدين `npm run build`.
 
+ملاحظات:
+- التصنيف (`category`) الجديد بيظهر تلقائيًا كزر فلتر في صفحة الأعمال.
+- المشاريع التجريبية (`demo: true`) بتختفي لما تخلّي `showDemoProjects` = `false` في `content/site.json`. وامسح مشروع `test` لو مش عايزه يظهر.
+- تقدر برضه تكتب `image` و`mobileImage` و`gallery` و`beforeAfter` يدويًا في `projects.json` لو الصور في مكان تاني.
+
+## السوشيال (لوجو انستجرام وغيره)
+حط الرابط في `content/site.json` تحت `social` (`instagram`, `linkedin`, `facebook`, `youtube`, `x`, `github`). كل رابط بيظهر كأيقونة دايرية في الفوتر وصفحة التواصل، والفاضي مبيظهرش.
+
+## الأنيميشنز
+- الكود في `assets/js/fx.js` و`assets/css/fx.css` (من غير مكتبات). كله بيتقفل تلقائيًا لمن عنده `prefers-reduced-motion`، والكيرسر والـ tilt والـ magnetic بيشتغلوا على الماوس بس.
+- الوضع الداكن بيتفعّل من الزر في الهيدر، وألوانه مشتقة من نفس ألوان `theme`.
+- نصوص الـ typed (`hero.typed`) والكلمات المتغيّرة (`cta.swap`) والنص الكبير (`bigText`) كلها من `content/site.json` و`site.ar.json`.
+
+## نموذج التواصل
+مفيش باك إند، فالنموذج بيفتح تطبيق الإيميل عند الزائر بالرسالة جاهزة على `email` المكتوب في `site.json`.
+لو عايز إرسال مباشر من غير فتح الإيميل، اعمل فورم مجاني على Formspree وحط رابطه في `formEndpoint` داخل `content/site.json`.
+
+## قسم "Why brands choose us" (بدل الأرقام القديمة)
+قسم بنفس ألوان البراند: قايمة نقاط بتتبدّل لوحدها مع خط تقدّم، ولوجو البراند في النص وكارت صغير بيتنقل حواليه (بيقف لما الماوس يبقى فوق القايمة، وبيتقفل مع `prefers-reduced-motion`).
+كل نصوصه في `content/site.json` تحت `spotlight` (`eyebrow`, `title`, `text`, `items[]` وكل item فيه `value` و`label` و`desc`)، والعربي في `site.ar.json` بنفس الترتيب. اكتب فيه حاجات حقيقية بس.
+
+## قسم "More love from our clients"
+بيظهر في آخر الصفحة الرئيسية قبل شريط الـ CTA. كل كارت من `testimonials` في `content/site.json`:
+```json
+"testimonials": [
+  { "approved": true, "quote": "كلام العميل هنا", "name": "اسم العميل", "role": "Founder", "company": "اسم البراند", "rating": 5, "image": "/assets/img/clients/ahmed.jpg" }
+]
 ```
-content/
-  site.json           # English site content, theme colors, contact settings
-  site.ar.json        # Arabic site content
-  projects.json       # English projects
-  projects.ar.json    # Arabic projects
-assets/
-  css/  js/  fonts/  img/
-lib/i18n.js           # UI strings for both languages
-build.js              # static site generator
-CNAME                 # custom domain (see below)
-.github/workflows/deploy.yml   # automatic deployment
-```
+- لازم `approved: true` و`quote` عشان الكارت يظهر. `rating` (من 1 لـ 5) و`image` و`role`/`company` اختياريين.
+- لو مفيش ولا كارت: بيظهروا 3 كروت فاضية "مكان رأي العميل" طول ما `showDemoProjects` = `true`، ولما تخليه `false` القسم بيختفي لحد ما تضيف أول رأي حقيقي.
+- النصوص (العنوان وغيره) تتغير من `ui` في `site.json` (`loveEyebrow`, `loveTitle`).
 
-## Editing content
+## الانتقال بين الصفحات
+الكورتن بيظهر عليه لوجو البراند (`assets/img/logo-light.png`، نسخة فاتحة من اللوجو).
 
-All text lives in the `content/` folder. Edit the JSON, commit, and the site rebuilds.
-
-| What | Where |
-| --- | --- |
-| Hero, services, process, FAQ, about, call to action | `content/site.json` (English) and `content/site.ar.json` (Arabic) |
-| Brand colors | `theme` block in `content/site.json` |
-| Contact email | `email` in `content/site.json` |
-| Instagram / LinkedIn links | `social` block in `content/site.json` (empty values are hidden) |
-| Scrolling text strip | `marquee.enabled` in `content/site.json` (`false` hides it) |
-| Projects | `content/projects.json` and `content/projects.ar.json` |
-
-Keep the English and Arabic files in step: a change to one is not copied to the other.
-
-### Brand colors
-
-| Color | Hex |
-| --- | --- |
-| Cream (background) | `#FAF3E8` |
-| Terracotta (accent) | `#C8674A` |
-| Forest green (primary / text) | `#2F5D50` |
-
-### Adding a project
-
-1. Put the screenshots in `assets/img/projects/`.
-2. Add an entry to `content/projects.json` and the matching one to `content/projects.ar.json`, with the same `slug`.
-3. Point `image` and `mobileImage` at the files, for example `"/assets/img/projects/store1.jpg"`.
-
-Entries with `"demo": true` are placeholders. Set `showDemoProjects` to `false` in `content/site.json` to hide them.
-
-## Contact form
-
-The form posts to the Formspree endpoint set in `formEndpoint` in `content/site.json`. If that value is empty, the form falls back to opening the visitor's email app, addressed to the `email` value.
-
-## Deploying to GitHub Pages
-
-1. Create a repository and push the whole folder, including `.github/`.
-2. In **Settings → Pages**, set **Source** to **GitHub Actions**.
-3. Every push to `main` builds and publishes the site automatically. Progress is visible in the **Actions** tab, and updates usually appear within a couple of minutes.
-
-The site address is chosen automatically:
-
-- If the `CNAME` file is present and not empty, the site is served from that custom domain.
-- Otherwise, if the repository is named `USERNAME.github.io`, it is served from the root of that address.
-- Otherwise it is served from `https://USERNAME.github.io/REPO/`.
-
-### Custom domain
-
-The `CNAME` file currently contains `devcommitt.com`. Only keep it if you own that domain and its DNS points to GitHub Pages. If not, delete the file and the site will deploy to the `github.io` address instead.
-
-## Notes
-
-- Canonical URLs, Open Graph URLs and `sitemap.xml` are generated only when a site URL is known. The deploy workflow supplies it automatically, so they are skipped on local builds.
-- Animations are turned off for visitors who prefer reduced motion.
-- The build checks that all internal links and assets resolve, and fails if the JSON files are invalid.
+## الأمان (من غير باك إند)
+- كل صفحة فيها Content-Security-Policy صارمة: مفيش سكربتات أو ستايلات inline، ومفيش تحميل من مواقع تانية غير الصور، والنموذج مسموح له يبعت بس لـ `formEndpoint`.
+- النموذج: honeypot + timeout 15 ثانية + بدون cookies/referrer + قفل الزر 20 ثانية بعد الإرسال الناجح. الحماية الحقيقية من السبام بتتظبط من إعدادات Formspree نفسها (reCAPTCHA / الحد من الإرسال).
+- GitHub Pages مش بيسمح بإضافة HTTP headers، فـ `frame-ancestors` (منع تضمين الموقع في iframe) مش ممكن من هنا. لو عايزه، حط الموقع ورا Cloudflare.
+- الروابط الخارجية كلها `rel="noopener noreferrer"`، وكل النصوص بتتعمل escape، والروابط بتتفلتر (http/https/mailto/tel بس).

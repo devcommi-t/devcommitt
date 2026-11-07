@@ -122,7 +122,7 @@ main{padding-top:4.6rem}
 .hero h1{font-size:clamp(2.6rem,6vw,4.8rem)}
 .shape{transition:translate .5s ease-out;animation:fl 9s ease-in-out infinite}.s1{translate:calc(var(--mx,0)*34px) calc(var(--my,0)*22px)}.s2{translate:calc(var(--mx,0)*-26px) calc(var(--my,0)*-18px);animation-delay:-3s}
 .laptop{transition:translate .5s ease-out;translate:calc(var(--mx,0)*-12px) calc(var(--my,0)*-9px)}.phone{transition:translate .5s ease-out;translate:calc(var(--mx,0)*-26px) calc(var(--my,0)*-16px)}
-.js [data-r]{opacity:0;transform:translateY(30px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1);transition-delay:var(--d,0s)}
+.js [data-r]{opacity:0;transform:translateY(46px) scale(.985);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1);transition-delay:var(--d,0s)}
 .js [data-r].in{opacity:1;transform:none}
 .folder{position:relative;padding-top:1.3rem}
 .folder:before{content:"";position:absolute;top:0;left:0;width:42%;height:1.8rem;background:var(--color-cream-deep);border:1px solid var(--color-line);border-bottom:0;border-radius:12px 12px 0 0}
@@ -146,8 +146,6 @@ form .btn{width:100%;border-radius:999px;padding:1rem}
 @media(prefers-reduced-motion:reduce){.hero *,.shape,.tile{animation:none!important}}
 
 /* v4: more motion */
-@view-transition{navigation:auto}
-::view-transition-group(root){animation-duration:.45s}
 @keyframes splash{0%,60%{clip-path:inset(0)}100%{clip-path:inset(0 0 100% 0);visibility:hidden}}
 @keyframes up{to{transform:none}}
 @keyframes mq{to{transform:translateX(-50%)}}
