@@ -1,7 +1,19 @@
-// Runs before first paint.
+// boot.js — runs before the first paint (loaded in <head>).   يشتغل قبل ما الصفحة تتعرض.
 (function () {
   var d = document.documentElement;
   d.classList.add('js');
+
+  // SECURITY: clickjacking guard. GitHub Pages cannot send the X-Frame-Options header, so if another website
+  // puts this site inside a frame we hide it and try to break out. (Local preview, e.g. the VS Code browser, is allowed.)
+  // الأمان: لو موقع تاني حط موقعك جوه iframe بنخفيه ونخرج منه. المعاينة المحلية مسموحة.
+  try {
+    var h = location.hostname;
+    if (window.top !== window.self && !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(h)) {
+      d.style.display = 'none';
+      try { window.top.location.href = window.self.location.href; } catch (e) {}
+    }
+  } catch (e) { d.style.display = 'none'; }
+
   // Saved light/dark choice (default is the light brand look).
   try { var th = localStorage.getItem('dct'); if (th === 'dark' || th === 'light') d.setAttribute('data-theme', th); } catch (e) {}
   var rm = false; try { rm = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}

@@ -1,25 +1,66 @@
 {
+  // =========================================================================
+  //  SITE SETTINGS  |  اعدادات الموقع
+  //  Edit values only (the text in quotes after the colon). Lines starting with // are notes.
+  //  عدّل القيم فقط (النص بين العلامات بعد النقطتين). الاسطر اللي بتبدأ بـ // ملاحظات.
+  //  After saving, the preview refreshes by itself (npm start).
+  // =========================================================================
+  // Site name  |  اسم الموقع
   "name": "<dev.commi>t",
   "title": "<dev.commi>t — Shopify Design & Development Studio",
   "description": "A modern digital studio building premium Shopify storefronts for ambitious brands.",
   "siteUrl": "",
+  // Contact email shown on the site  |  الايميل الظاهر في الموقع
   "email": "devcommitt@gmail.com",
+  // WhatsApp number WITH country code, digits only. Example Egypt: "201001234567" (no + and no spaces).
+  // رقم الواتساب بكود الدولة وارقام بس. مثال مصر: "201001234567" (من غير + ومن غير مسافات).
+  // Leave empty = hidden at launch (a placeholder shows while showDemoProjects is true).
+  // سيبه فاضي = مش هيظهر (بيظهر مكان فاضي طول ما showDemoProjects = true).
+  "whatsapp": "",
+  // Message that opens pre-filled in WhatsApp  |  الرسالة اللي بتظهر جاهزة في الواتساب
+  "whatsappMessage": "Hi! I would like to talk about a Shopify project.",
+  // Contact form endpoint (Formspree)  |  رابط فورم التواصل
   "formEndpoint": "https://formspree.io/f/myeebowg",
+  // Paste your profile links here (full https:// links). Empty = hidden.
+  // حط لينكات حساباتك هنا (لينك كامل يبدأ بـ https://). الفاضي مش بيظهر.
+  // Instagram: "https://instagram.com/yourname"  |  TikTok: "https://tiktok.com/@yourname"  |  Facebook: "https://facebook.com/yourpage"
   "social": {
     "instagram": "",
-    "linkedin": "",
+    "tiktok": "",
     "facebook": "",
+    "linkedin": "",
     "youtube": "",
     "x": "",
     "github": ""
   },
-  "legal": [],
+  // LIGHT mode colours, format #RRGGBB.  |  الوان الوضع الفاتح.
+  // background = page, surface = cards, primary = main/brand, accent = highlights, text = body text
+  "theme": {
+    "background": "#FAF3E8",
+    "primary": "#2F5D50",
+    "accent": "#C8674A",
+    "surface": "#F1E6D3",
+    "text": "#2F5D50"
+  },
+  // DARK mode colours (soft, easy on the eyes). Same keys as above.
+  // الوان الوضع الداكن (هادية ومريحة للعين). نفس الخانات.
+  "themeDark": {
+    "background": "#101916",
+    "surface": "#182522",
+    "primary": "#356B5B",
+    "accent": "#E58E70",
+    "text": "#E9E3D6"
+  },
+  // GO-LIVE SWITCH: true = demo projects + empty placeholders are shown. false = they are hidden.
+  // مفتاح الاطلاق: true يعرض مشاريع تجريبية واماكن فاضية، false يخفيها. غيّره لـ false لما تضيف شغلك الحقيقي.
   "showDemoProjects": true,
+  "legal": [],
   "sections": {
     "testimonials": true,
     "faq": true,
     "why": true
   },
+  // Menu links  |  روابط القائمة
   "nav": [
     {
       "label": "Home",
@@ -46,6 +87,7 @@
     "label": "Start a Project",
     "href": "/contact/"
   },
+  // HOME HERO (first screen). "chips" = the 3 small floating badges.  |  اول شاشة في الرئيسية. "chips" = الشارات الصغيرة الطايرة.
   "hero": {
     "eyebrow": "Shopify design & development studio",
     "title": "Shopify Stores Built to Move Brands Forward.",
@@ -66,7 +108,12 @@
         "flexible sections",
         "fast, branded storefronts"
       ]
-    }
+    },
+    "chips": [
+      "Online Store 2.0",
+      "Mobile-first",
+      "Fast & accessible"
+    ]
   },
   "categories": [
     "Shopify Store Design",
@@ -262,13 +309,6 @@
   },
   "whyTitle": "Built for Brands That Want More.",
   "statement": "We turn ideas into Shopify storefronts, custom themes and flexible sections that help brands sell",
-  "theme": {
-    "background": "#FAF3E8",
-    "primary": "#2F5D50",
-    "accent": "#C8674A",
-    "surface": "#F1E6D3",
-    "text": "#2F5D50"
-  },
   "contactPage": {
     "title": "Get in Touch",
     "text": "Have a project in mind? Fill out the form and we will get back to you.",
@@ -279,12 +319,17 @@
     "extraFields": []
   },
   "copy": {},
+  // Scrolling strip under the hero. items empty = uses your service names.  |  الشريط المتحرك تحت الهيرو، لو items فاضي بياخد اسماء الخدمات.
   "marquee": {
     "enabled": true,
     "speed": "normal",
     "items": []
   },
-  "spotlight": {
+  // Giant sliding words  |  الكلمات الكبيرة المتحركة
+  "bigText": "Design • Build • Launch •",
+  // SHOWCASE (replaces the old "planet" section). Each item has a "scene" animation: sections | responsive | editor | code.
+  // قسم العرض (بديل قسم الكوكب). كل نقطة ليها مشهد متحرك: sections | responsive | editor | code.
+  "showcase": {
     "eyebrow": "Why brands choose us",
     "title": "Built for your brand, not a template.",
     "text": "Every storefront starts from your brand and ends in something your team can edit on its own.",
@@ -292,24 +337,55 @@
       {
         "value": "OS 2.0",
         "label": "Online Store 2.0",
-        "desc": "Custom themes with flexible sections and JSON templates."
+        "desc": "Custom themes with flexible sections and JSON templates.",
+        "scene": "sections"
       },
       {
         "value": "Mobile-first",
         "label": "Responsive storefronts",
-        "desc": "Designed deliberately for mobile, tablet and desktop."
+        "desc": "Designed deliberately for mobile, tablet and desktop.",
+        "scene": "responsive"
       },
       {
         "value": "No-code",
         "label": "Edit it yourself",
-        "desc": "Update pages from the Shopify theme editor without a developer."
+        "desc": "Update pages from the Shopify theme editor without a developer.",
+        "scene": "editor"
       },
       {
         "value": "Clean code",
         "label": "Easy to extend",
-        "desc": "Readable, organized code that stays fast to change after launch."
+        "desc": "Readable, organized code that stays fast to change after launch.",
+        "scene": "code"
       }
     ]
   },
-  "bigText": "Design • Build • Launch •"
+  // HOME PAGE ORDER. Reorder or delete names to move/hide sections.
+  // Built-in: hero, ticker, work, statement, showcase, bigtext, services, process, why, love, cta.
+  // ترتيب الرئيسية: غيّر الترتيب او امسح اسم لاخفاء القسم.
+  // To ADD your own section, put an object instead of a name, for example:
+  // لاضافة قسم جديد حط object مكان الاسم، مثال:
+  // { "type":"text", "style":"tint", "eyebrow":"Hello", "title":"My new section", "text":"Some words" }
+  // types: text | cards | split | faq | steps | cta     style: light | tint | dark
+  // (cards/steps take "items":[{"title":"","desc":"","icon":"bolt"}]; faq takes "items":[{"q":"","a":""}])
+  "homeSections": [
+    "hero",
+    "ticker",
+    "work",
+    "statement",
+    "showcase",
+    "bigtext",
+    "services",
+    "process",
+    "why",
+    "love",
+    "cta"
+  ],
+  // Extra blocks on inner pages (same format as custom sections above).  |  اقسام اضافية للصفحات الداخلية بنفس الشكل.
+  "extraSections": {
+    "work": [],
+    "services": [],
+    "about": [],
+    "contact": []
+  }
 }

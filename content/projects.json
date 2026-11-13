@@ -1,3 +1,12 @@
+// =========================================================================
+// PROJECTS  |  المشاريع
+// Easiest way: run   npm run add-project -- "Project title" --cat "Shopify Store Design"
+// أسهل طريقة: شغّل الأمر اللي فوق وهو يضيف المشروع لوحده ويعمل فولدر للصور.
+// Or copy one block below and edit it. Images go in assets/img/projects/<slug>/  (cover.jpg, mobile.jpg, 1.jpg, 2.jpg ...)
+// او انسخ بلوك من تحت وعدّله. الصور في assets/img/projects/<slug>/
+// "demo": true  = placeholder, hidden when showDemoProjects is false.  امسحه او خليه false للمشروع الحقيقي.
+// "featured": true = shows on the home page.  يظهر في الرئيسية.
+// =========================================================================
 [
   {
     "slug": "demo-storefront-one",

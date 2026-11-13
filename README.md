@@ -1,5 +1,8 @@
 # `<dev.commit>` — نسخة Frontend فقط (جاهزة لـ GitHub Pages)
 
+> 📘 **للتعديل السريع (ألوان، واتساب، سوشيال، أقسام جديدة، مشاريع) افتح [`EDIT-GUIDE.md`](EDIT-GUIDE.md).**
+> Quick edits (colours, WhatsApp, socials, new sections, projects): see `EDIT-GUIDE.md`.
+
 نفس الموقع بنفس الألوان والتصميم والأنيميشن والأزرار واللغتين (عربي/إنجليزي)، لكن **بدون باك إند**: مفيش سيرفر ولا لوحة أدمن ولا قاعدة بيانات. الموقع بيتبني ملفات HTML/CSS/JS ثابتة.
 
 ## النشر على GitHub Pages (تلقائي)
@@ -32,7 +35,7 @@ npm run build   # بيطلّع المجلد dist/
 - تقدر برضه تكتب `image` و`mobileImage` و`gallery` و`beforeAfter` يدويًا في `projects.json` لو الصور في مكان تاني.
 
 ## السوشيال (لوجو انستجرام وغيره)
-حط الرابط في `content/site.json` تحت `social` (`instagram`, `linkedin`, `facebook`, `youtube`, `x`, `github`). كل رابط بيظهر كأيقونة دايرية في الفوتر وصفحة التواصل، والفاضي مبيظهرش.
+حط الرابط في `content/site.json` تحت `social` (`instagram`, `tiktok`, `facebook`, `linkedin`, `youtube`, `x`, `github`) ورقم الواتساب في `whatsapp`. كل رابط بيظهر كأيقونة دايرية في الفوتر وصفحة التواصل، والفاضي مبيظهرش.
 
 ## الأنيميشنز
 - الكود في `assets/js/fx.js` و`assets/css/fx.css` (من غير مكتبات). كله بيتقفل تلقائيًا لمن عنده `prefers-reduced-motion`، والكيرسر والـ tilt والـ magnetic بيشتغلوا على الماوس بس.
