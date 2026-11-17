@@ -160,10 +160,19 @@ function build() {
     Object.assign(out, render('ar', S_ar, P_ar.map(p => ({ ...p, category: cat(p.category) })), ctx));
   }
 
+  // Cache-busting: every CSS/JS link gets ?v=<hash of the files>, so after each deploy visitors (and you) get the new files at once
+  // instead of an old cached copy (this is why an old script could run against new HTML).
+  // مع كل تحديث الروابط بتاخد ?v=رقم، فالمتصفح مش هيستخدم نسخة قديمة مخزنة.
+  const ASSET_V = (() => {
+    const h = require('crypto').createHash('md5');
+    for (const d of ['css', 'js']) for (const f of fs.readdirSync(path.join(R, 'assets', d)).sort()) h.update(f).update(fs.readFileSync(path.join(R, 'assets', d, f)));
+    return h.update(themeCss(S_en)).digest('hex').slice(0, 8);
+  })();
   fs.rmSync(OUT, { recursive: true, force: true });
   for (let [url, html] of Object.entries(out)) {
     const f = url.endsWith('.html') ? path.join(OUT, url) : path.join(OUT, url, 'index.html');
     if (BASE) html = html.replace(/\b(href|src|action)="\/(?!\/)/g, `$1="${BASE}/`);
+    html = html.replace(/((?:href|src)="[^"?#]*\/assets\/(?:css|js)\/[^"?#]+\.(?:css|js))"/g, `$1?v=${ASSET_V}"`);
     fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, html);
   }
   fs.cpSync(path.join(R, 'assets'), path.join(OUT, 'assets'), { recursive: true });
