@@ -23,7 +23,7 @@ npm run build    # ينتج dist/ · writes dist/
 
 ## 3) السوشيال والواتساب · Socials & WhatsApp
 ```jsonc
-"whatsapp": "201001234567",          // كود الدولة + رقم، أرقام بس · country code + digits only
+"whatsapp": "+201050479322",      // أي شكل: +20… أو 010… أو 20… · any format (a leading 0 becomes the country code)
 "social": { "instagram": "https://instagram.com/you", "tiktok": "https://tiktok.com/@you", "facebook": "https://facebook.com/you" }
 ```
 الفاضي مش بيظهر (لما `showDemoProjects: false`). رقم الواتساب بيظهر في Contact وزرار عايم.
@@ -69,7 +69,7 @@ Drop images there with those names — they are picked up automatically.
 - الروابط بتتفلتر (`https/http/mailto/tel` بس) · URLs are sanitised.
 - فورم التواصل: honeypot + مؤقت ضد البوتات · form honeypot + timing trap.
 - حماية clickjacking داخل `boot.js` (GitHub Pages مش بيسمح بـ headers) · frame-busting in `boot.js`.
-- ماتحطش أسرار (API keys) في الملفات؛ Formspree endpoint عام بطبيعته · never put secrets in files.
+- ماتحطش أسرار (API keys) في الملفات · never put secrets in files. فورم التواصل بيفتح الواتساب على رقمك، مفيش سيرفر · the contact form opens WhatsApp on your number, no server.
 
 ## 9) الأنيميشن · Animation
 `assets/css/fx.css` + `assets/js/fx.js` (من غير مكتبات · no libraries). بتتقفل تلقائيًا مع `prefers-reduced-motion`.

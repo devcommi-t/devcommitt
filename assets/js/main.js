@@ -117,7 +117,7 @@
   const f = $('#inquiry');
   if (f && !f.hasAttribute('data-off')) {
     const st = $('#status'), b = $('button[type=submit]', f);
-    f.addEventListener('submit', async ev => {
+    f.addEventListener('submit', ev => {
       ev.preventDefault();
       if (f.elements._gotcha.value) return;                       // honeypot: bots fill the hidden field
       const msg = k => f.getAttribute('data-m-' + k) || '';
@@ -130,33 +130,25 @@
         f.reportValidity(); st.className = 'err'; st.textContent = msg('required'); return;
       }
       $$('.f.bad', f).forEach(w => w.classList.remove('bad'));
-      if (f.dataset.mailto) {
-        const lines = [];
-        for (const [k, v] of new FormData(f)) if (v && !['_gotcha', 'lang', 'consent'].includes(k)) {
-          const l = f.querySelector('[name="' + k + '"]'), lab = l && l.id && f.querySelector('label[for="' + l.id + '"]');
-          lines.push((lab ? lab.textContent.replace(/[*]|\(optional\)|\(اختياري\)/g, '').trim() : k) + ': ' + v);
-        }
-        const subj = 'Inquiry from ' + String(f.elements.name.value).replace(/[\r\n]+/g, ' ');
-        location.href = 'mailto:' + f.dataset.mailto + '?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(lines.join('\n\n'));
-        st.className = 'ok'; st.textContent = msg('mailto'); if (window.dcFx) dcFx.confetti(b);
+      // The form has no server: the inquiry opens WhatsApp (or the email app as a fallback) with the message ready to send.
+      // الفورم من غير سيرفر: الاستفسار بيفتح الواتساب (أو الإيميل لو مفيش رقم) والرسالة جاهزة للإرسال.
+      const lines = [];
+      for (const [k, v] of new FormData(f)) if (v && !['_gotcha', 'lang', 'consent'].includes(k)) {
+        const l = f.querySelector('[name="' + k + '"]'), lab = l && l.id && f.querySelector('label[for="' + l.id + '"]');
+        lines.push((lab ? lab.textContent.replace(/[*]|\(optional\)|\(اختياري\)/g, '').trim() : k) + (f.dataset.wa ? ':* ' : ': ') + v);
+      }
+      if (f.dataset.wa) {
+        let text = (f.dataset.waIntro || '') + '\n\n' + lines.map(x => '*' + x).join('\n');
+        if (text.length > 1800) text = text.slice(0, 1797) + '...';
+        const a = document.createElement('a');
+        a.href = 'https://wa.me/' + f.dataset.wa + '?text=' + encodeURIComponent(text); a.target = '_blank'; a.rel = 'noopener noreferrer';
+        document.body.appendChild(a); a.click(); a.remove();
+        st.className = 'ok'; st.textContent = msg('wa'); if (window.dcFx) dcFx.confetti(b);
         return;
       }
-      // Bot check: a person cannot fill this form in under 2 seconds. Pretend success, send nothing.
-      if (Date.now() - T0 < 2000) { st.className = 'ok'; st.textContent = st.dataset.success || ''; return; }
-      b.disabled = true; st.className = ''; st.textContent = msg('sending');
-      // 15 s timeout so the form never hangs; no cookies or referrer are sent to the form service.
-      const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 15000);
-      let sent = false;
-      try {
-        const r = await fetch(f.action, { method: 'POST', headers: { Accept: 'application/json' }, body: new URLSearchParams(new FormData(f)), signal: ctl.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
-        if (!r.ok) throw new Error(r.status);
-        sent = true; f.reset(); st.className = 'ok'; st.textContent = st.dataset.success || ''; if (window.dcFx) dcFx.confetti(b);
-      } catch (x) {
-        st.className = 'err'; st.textContent = msg('error');
-      }
-      clearTimeout(tm);
-      // after a successful send, wait 20 s before the button works again (stops accidental double sends and spam clicks)
-      if (sent) setTimeout(() => { b.disabled = false; }, 20000); else b.disabled = false;
+      const subj = 'Inquiry from ' + String(f.elements.name.value).replace(/[\r\n]+/g, ' ');
+      location.href = 'mailto:' + f.dataset.mailto + '?subject=' + encodeURIComponent(subj) + '&body=' + encodeURIComponent(lines.join('\n\n'));
+      st.className = 'ok'; st.textContent = msg('mailto'); if (window.dcFx) dcFx.confetti(b);
     });
   }
 

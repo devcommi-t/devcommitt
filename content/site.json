@@ -12,15 +12,16 @@
   "siteUrl": "",
   // Contact email shown on the site  |  الايميل الظاهر في الموقع
   "email": "devcommitt@gmail.com",
-  // WhatsApp number WITH country code, digits only. Example Egypt: "201001234567" (no + and no spaces).
-  // رقم الواتساب بكود الدولة وارقام بس. مثال مصر: "201001234567" (من غير + ومن غير مسافات).
-  // Leave empty = hidden at launch (a placeholder shows while showDemoProjects is true).
-  // سيبه فاضي = مش هيظهر (بيظهر مكان فاضي طول ما showDemoProjects = true).
-  "whatsapp": "",
-  // Message that opens pre-filled in WhatsApp  |  الرسالة اللي بتظهر جاهزة في الواتساب
-  "whatsappMessage": "Hi! I would like to talk about a Shopify project.",
-  // Contact form endpoint (Formspree)  |  رابط فورم التواصل
-  "formEndpoint": "https://formspree.io/f/myeebowg",
+  // ==== WhatsApp (also receives the contact-form inquiries)  |  الواتساب (وبتوصله كمان رسائل فورم التواصل) ====
+  // Your number. Any format works: "+201050479322", "01050479322" or "201050479322".
+  // رقمك. أي شكل يشتغل. لو بدأ بصفر بيتحط قدامه كود الدولة تلقائي.
+  "whatsapp": "+201205005573",
+  // Country code used when the number starts with 0 (20 = Egypt)  |  كود الدولة (20 = مصر)
+  "whatsappCountryCode": "20",
+  // Message that opens pre-filled when a visitor taps a WhatsApp button  |  الرسالة اللي بتظهر جاهزة لما العميل يدوس على زر الواتساب
+  "whatsappMessage": "Hi dev.commi>t! I would like to talk about a Shopify project.",
+  // Contact form: when a visitor presses Send, WhatsApp opens on this number with the inquiry ready to send. No server, no Formspree.
+  // فورم التواصل: لما العميل يدوس إرسال بيفتح الواتساب على نفس الرقم والرسالة جاهزة. من غير سيرفر ومن غير Formspree.
   // Paste your profile links here (full https:// links). Empty = hidden.
   // حط لينكات حساباتك هنا (لينك كامل يبدأ بـ https://). الفاضي مش بيظهر.
   // Instagram: "https://instagram.com/yourname"  |  TikTok: "https://tiktok.com/@yourname"  |  Facebook: "https://facebook.com/yourpage"

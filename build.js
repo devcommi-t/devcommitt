@@ -150,11 +150,10 @@ function build() {
   const P_ar = I.mergeProjects(P_en, rdOpt('projects.ar.json', {}));
   const S_enR = I.resolveSite(S_en, null, 'en');
   const SITE = (process.env.SITE_URL || S_en.siteUrl || '').replace(/\/$/, '');
-  const ENDPOINT = process.env.FORM_ENDPOINT || S_en.formEndpoint || '';
   if (process.env.NODE_ENV === 'production' && P_en.some(p => p.demo) && S_en.showDemoProjects) console.warn('WARNING: demo projects/placeholders are included in a production build (set showDemoProjects to false).');
 
   const out = {};
-  const ctx = { SITE, ENDPOINT, arabicOn, S_en: S_enR };
+  const ctx = { SITE, arabicOn, S_en: S_enR };
   Object.assign(out, render('en', S_enR, P_en, ctx));
   if (arabicOn) {
     const cat = c => { const i = (S_en.categories || []).indexOf(c); return i >= 0 && S_ar.categories && S_ar.categories[i] ? S_ar.categories[i] : c; };
@@ -192,7 +191,7 @@ function build() {
 //  RENDER one language
 // =====================================================================
 function render(lang, S, P, ctx) {
-  const { SITE, ENDPOINT, arabicOn, S_en } = ctx;
+  const { SITE, arabicOn, S_en } = ctx;
   const AR = lang === 'ar', pre = AR ? '/ar' : '';
   const T = { ...I.DEF[lang].ui, ...(S.ui || {}) };
   // The brand name contains < > . which a right-to-left page would mirror; isolate it as left-to-right text.
@@ -210,7 +209,11 @@ function render(lang, S, P, ctx) {
 
   // ---------- social + WhatsApp ----------
   // WhatsApp: put the number with country code in site.json -> "whatsapp" (e.g. "201001234567"). Digits only is fine; "+" and spaces are removed.
-  const waNum = String(S.whatsapp || '').replace(/\D/g, '');
+  // Any format works: "+20 105 047 9322", "01050479322" or "201050479322". A leading 0 is swapped for the country code
+// (site.json -> "whatsappCountryCode", default "20" = Egypt).  |  أي شكل للرقم يشتغل؛ الصفر في الأول بيتبدل بكود الدولة.
+const waCC = String(S.whatsappCountryCode || '20').replace(/\D/g, '');
+let waNum = String(S.whatsapp || '').replace(/\D/g, '');
+if (waNum.startsWith('00')) waNum = waNum.slice(2); else if (waNum.startsWith('0')) waNum = waCC + waNum.slice(1);
   const waOk = /^\d{8,15}$/.test(waNum);
   const waLink = waOk ? `https://wa.me/${waNum}${S.whatsappMessage ? '?text=' + encodeURIComponent(S.whatsappMessage) : ''}` : '';
   const socList = SOC_ORDER.map(k => {
@@ -238,9 +241,8 @@ function render(lang, S, P, ctx) {
   const txt = key => { const v = nm(S.copy[key]); return v || (key === 'aboutPageText' ? S.description : ''); };
   const year = new Date().getFullYear();
 
-  // SECURITY: strict CSP: no inline scripts/styles, nothing loaded from other sites except images; forms may only go to the configured endpoint.
-  const epOrigin = (() => { try { return new URL(ENDPOINT).origin; } catch (x) { return ''; } })();
-  const CSP = `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'${epOrigin ? ' ' + epOrigin : ''}; form-action 'self'${epOrigin ? ' ' + epOrigin : ''}; base-uri 'self'; object-src 'none'; manifest-src 'self'`;
+  // SECURITY: strict CSP: no inline scripts/styles, nothing loaded from other sites except images; forms never leave the site (the contact form opens WhatsApp).
+  const CSP = `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'self'; object-src 'none'; manifest-src 'self'`;
 
   // Logo: two copies, CSS shows the right one for light / dark. (assets/img/logo.png = dark ink, logo-light.png = cream)
   const logo = h => `<img src="/assets/img/logo.png" alt="${e(S.name)}" width="913" height="134" class="logo logo-l ${h}"><img src="/assets/img/logo-light.png" alt="" width="913" height="134" class="logo logo-d ${h}" aria-hidden="true">`;
@@ -520,9 +522,9 @@ ${(S.team || []).length ? `<section class="wrap sec">${head(T.team)}<div class="
   const cMore = contactChannels.map(c => `<a class="ccard" href="${u(c.href || '#')}" ${/^https?:/.test(c.href || '') ? 'target="_blank" rel="noopener noreferrer"' : ''}><span class="ccard-ico">${svg(ICON.chat, 24)}</span><span class="ccard-t"><b>${e(c.label)}</b>${c.value ? `<small>${e(c.value)}</small>` : ''}</span><span class="ccard-go" aria-hidden="true">${arrowUp}</span></a>`).join('');
   out[K('/contact/')] = page({
     key: 'contact', url: '/contact/', title: T.pageContact, desc: T.descContact,
-    body: `${pageHero(CP.title, CP.text)}<section class="wrap sec contact"><aside class="cinfo">${cEmail}${cWa}${cMore}${cSoc}</aside><form id="inquiry" method="post" action="${ENDPOINT ? u(ENDPOINT) : '#'}" ${ENDPOINT || !S.email ? '' : `data-mailto="${e(S.email)}"`} ${ENDPOINT || S.email ? '' : 'data-off'} data-m-mailto="${e(T.msgMailto)}" data-m-required="${e(T.msgRequired)}" data-m-sending="${e(T.msgSending)}" data-m-error="${e(T.msgError)}" novalidate>
+    body: `${pageHero(CP.title, CP.text)}<section class="wrap sec contact"><aside class="cinfo">${cEmail}${cWa}${cMore}${cSoc}</aside><form id="inquiry" method="post" action="#" ${waOk ? `data-wa="${waNum}" data-wa-intro="${e(T.waFormIntro)}"` : S.email ? `data-mailto="${e(S.email)}"` : 'data-off'} data-m-wa="${e(T.msgWa)}" data-m-mailto="${e(T.msgMailto)}" data-m-required="${e(T.msgRequired)}" data-m-sending="${e(T.msgSending)}" data-m-error="${e(T.msgError)}" novalidate>
 <h2 class="form-t">${e(T.formTitle)}</h2>
-${ENDPOINT ? '' : S.email ? `<p class="note">${e(T.formMailto)}</p>` : `<p class="note">${e(T.formOff)} ${S.email ? `${e(T.emailUsPrefix)} <a class="link ltr" href="mailto:${e(S.email)}">${e(S.email)}</a> ${e(T.emailUsSuffix)}` : e(T.formAddEndpoint)}</p>`}
+${waOk ? `<p class="note">${e(T.formWa)}</p>` : S.email ? `<p class="note">${e(T.formMailto)}</p>` : `<p class="note">${e(T.formOff)} ${S.email ? `${e(T.emailUsPrefix)} <a class="link ltr" href="mailto:${e(S.email)}">${e(S.email)}</a> ${e(T.emailUsSuffix)}` : e(T.formAddEndpoint)}</p>`}
 <input type="hidden" name="lang" value="${lang}">
 <div class="frow">${fld('name', e(CL.name), '<input id="name" name="name" autocomplete="name" maxlength="120" required>', 1)}${fld('email', e(CL.email), '<input id="email" name="email" type="email" autocomplete="email" maxlength="200" required>', 1)}</div>
 <div class="frow">${fld('company', e(CL.company), '<input id="company" name="company" autocomplete="organization" maxlength="200" required>', 1)}${fld('site', e(CL.website), '<input id="site" name="website" type="url" placeholder="https://" maxlength="300">')}</div>
@@ -533,7 +535,7 @@ ${fld('pref', e(CL.contactMethod), `<select id="pref" name="contact_method"><opt
 ${extraFields.map((x, i) => { const n = 'custom_' + i, label = e(x.label || (T.extraField + ' ' + (i + 1))), req = x.required ? ' required' : ''; if (x.type === 'textarea') return fld(n, label, `<textarea id="${n}" name="${n}" rows="4" maxlength="2000"${req}></textarea>`, x.required); if (x.type === 'select') return fld(n, label, `<select id="${n}" name="${n}"${req}><option value="">${e(T.chooseOption)}</option>${opt(x.options || [], ((enCP.extraFields || [])[i] || {}).options)}</select>`, x.required); const typ = ['text', 'email', 'tel', 'url', 'number'].includes(x.type) ? x.type : 'text'; return fld(n, label, `<input id="${n}" name="${n}" type="${typ}" maxlength="2000"${req}>`, x.required); }).join('')}
 <div class="f hp" aria-hidden="true"><label for="_g">${e(T.leaveEmpty)}</label><input id="_g" name="_gotcha" tabindex="-1" autocomplete="off"></div>
 <div class="f check"><input id="consent" name="consent" type="checkbox" required><label for="consent">${e(CL.consent)} <span aria-hidden="true">*</span></label></div>
-<button class="btn" type="submit" ${ENDPOINT || S.email ? '' : 'disabled'}><span>${e(CP.submitLabel || 'Send inquiry')}</span></button><p id="status" data-success="${e(CP.successMessage)}" role="status" aria-live="polite"></p></form></section>${extra('contact')}`
+<button class="btn" type="submit" ${waOk || S.email ? '' : 'disabled'}><span>${e(CP.submitLabel || 'Send inquiry')}</span></button><p id="status" data-success="${e(CP.successMessage)}" role="status" aria-live="polite"></p></form></section>${extra('contact')}`
   });
   out[K('/404.html')] = page({ key: 'notfound', url: '/404.html', title: T.notFoundTitle, noindex: true, body: `${pageHero(T.notFoundTitle, T.notFoundText)}<p class="wrap sec"><a class="btn" href="${u('/')}"><span>${e(T.backHome)}</span></a></p>` });
   return out;
