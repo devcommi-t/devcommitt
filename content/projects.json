@@ -1,11 +1,29 @@
 // =========================================================================
 // PROJECTS  |  المشاريع
-// Easiest way: run   npm run add-project -- "Project title" --cat "Shopify Store Design"
-// أسهل طريقة: شغّل الأمر اللي فوق وهو يضيف المشروع لوحده ويعمل فولدر للصور.
-// Or copy one block below and edit it. Images go in assets/img/projects/<slug>/  (cover.jpg, mobile.jpg, 1.jpg, 2.jpg ...)
-// او انسخ بلوك من تحت وعدّله. الصور في assets/img/projects/<slug>/
-// "demo": true  = placeholder, hidden when showDemoProjects is false.  امسحه او خليه false للمشروع الحقيقي.
-// "featured": true = shows on the home page.  يظهر في الرئيسية.
+// ---------------------------------------------------------------------
+// EASY WAY (الطريقة السهلة) — copy this block, paste it inside [ ... ], fill 4 things:
+// انسخ البلوك ده والصقه جوه [ ... ] وعبّي 4 حاجات بس:
+//
+//   {
+//     "slug": "my-store",                          // اسم قصير بحروف انجليزي وشرطات / short id, letters + dashes
+//     "title": "My Store",                         // اسم المشروع / project name
+//     "category": "Shopify Store Design",          // التصنيف / category
+//     "summary": "One line about the project.",    // سطر وصف / one-line description
+//     "url": "https://my-store.com"                // لينك موقع المشروع / the project's website link
+//   },
+//
+// ✔ With a "url" and nothing else, the card opens the live website in a new tab.
+//   لو حطيت "url" ومفيش شرح تفصيلي، الكارت بيفتح موقع المشروع في تاب جديد على طول.
+// ✔ Image: put cover.jpg in assets/img/projects/<slug>/  (or set "image": "/assets/img/projects/x.jpg")
+//   الصورة: حط cover.jpg في assets/img/projects/<slug>/ وهتتاخد لوحدها.
+// ✔ Want a full case-study page instead? Add "overview", "goals", "gallery"... (see the demo blocks below).
+//   عايز صفحة تفاصيل؟ زوّد "overview" و"goals" و"gallery"... (شوف الأمثلة تحت).
+// ✔ Arabic text (optional): projects.ar.json  →  "my-store": { "title": "...", "summary": "..." }
+// ✔ Or run:  npm run add-project -- "Project title" --cat "Shopify Store Design" --url https://client.com
+//
+// "demo": true     = placeholder, hidden when showDemoProjects is false (امسحه للمشروع الحقيقي).
+// "featured": true = shows on the home page (بيظهر في الرئيسية — أول 3 مشاريع).
+// Order = order in this list (الترتيب زي ترتيبهم هنا).
 // =========================================================================
 [
   {

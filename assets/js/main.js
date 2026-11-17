@@ -206,7 +206,7 @@
     heads.forEach(h => { split(h); hio.observe(h); });
 
     // Every piece of content fades/rises in one after another as it scrolls into view.
-    const sel = '.sec-head,.sec>.eyebrow,.sec>.lead,.two>*,.card,.svc,.feats>div,.why>div,.steps:not(.steps-v) li,.panel,.tabs,.cols3>section,.banner,.love-c,.case>section,.facts,.contact>*,.ba-sec,.gal-sec,.scene,.sc-txt>:not(ul),.sc-it,.sc-vis,.statement,details,.foot-grid>*,.foot .sub,.phero>*,.cta .center>*,.filters,.xgrid>*,.xs-grid>*,.ticker';
+    const sel = '.sec-head,.sec>.eyebrow,.sec>.lead,.two>*,.card,.svc,.feats>div,.why>div,.steps li,.panel,.tabs,.cols3>section,.banner,.love-c,.case>section,.facts,.contact>*,.ba-sec,.gal-sec,.scene,.sc-txt>:not(ul),.sc-it,.sc-vis,.statement,details,.foot-grid>*,.foot .sub,.phero>*,.cta .center>*,.filters,.xgrid>*,.xs-grid>*,.ticker';
     $$(sel).forEach(el => { if (el.closest('[data-r]') || el.closest('.hero')) return; el.setAttribute('data-r', ''); });
     if ('IntersectionObserver' in window) {
       const io = new IntersectionObserver(es => {

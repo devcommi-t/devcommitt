@@ -36,10 +36,10 @@
   // LIGHT mode colours, format #RRGGBB.  |  الوان الوضع الفاتح.
   // background = page, surface = cards, primary = main/brand, accent = highlights, text = body text
   "theme": {
-    "background": "#FAF3E8",
+    "background": "#F4E7CE",  // كريمي / cream (كان #FAF3E8 فاتح قوي)
     "primary": "#2F5D50",
     "accent": "#C8674A",
-    "surface": "#F1E6D3",
+    "surface": "#EADABA",
     "text": "#2F5D50"
   },
   // DARK mode colours (soft, easy on the eyes). Same keys as above.
@@ -56,7 +56,7 @@
   "showDemoProjects": true,
   "legal": [],
   "sections": {
-    "testimonials": true,
+    "testimonials": false,
     "faq": true,
     "why": true
   },
@@ -361,7 +361,7 @@
     ]
   },
   // HOME PAGE ORDER. Reorder or delete names to move/hide sections.
-  // Built-in: hero, ticker, work, statement, showcase, bigtext, services, process, why, love, cta.
+  // Built-in: hero, ticker, work, statement, showcase, bigtext, services, process, why, cta.
   // ترتيب الرئيسية: غيّر الترتيب او امسح اسم لاخفاء القسم.
   // To ADD your own section, put an object instead of a name, for example:
   // لاضافة قسم جديد حط object مكان الاسم، مثال:
@@ -378,7 +378,6 @@
     "services",
     "process",
     "why",
-    "love",
     "cta"
   ],
   // Extra blocks on inner pages (same format as custom sections above).  |  اقسام اضافية للصفحات الداخلية بنفس الشكل.

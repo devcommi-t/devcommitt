@@ -115,13 +115,13 @@ const MOON = '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
 //  الألوان: بنطلّع ملف theme.css فيه ألوان الوضع الفاتح والداكن.
 //  Change colours in content/site.json ("theme" = light, "themeDark" = dark). Must be #RRGGBB.
 // =====================================================================
-const LIGHT = { background: '#FAF3E8', primary: '#2F5D50', accent: '#C8674A', surface: '#F1E6D3', text: '#2F5D50' };
+const LIGHT = { background: '#F4E7CE', primary: '#2F5D50', accent: '#C8674A', surface: '#EADABA', text: '#2F5D50' };
 const DARK = { background: '#101916', surface: '#182522', text: '#E9E3D6', primary: '#356B5B', accent: '#E58E70' };
 const pick = (def, src) => { const o = { ...def }; for (const k of Object.keys(def)) if (src && HEX.test(src[k])) o[k] = src[k]; return o; };
 function themeCss(S) {
   const L = pick(LIGHT, S.theme), D = pick(DARK, S.themeDark);
   const light = {
-    bg: L.background, 'bg-2': mix(L.background, L.surface, .55), surface: L.surface, 'surface-2': mix(L.surface, '#ffffff', .55),
+    bg: L.background, 'bg-2': mix(L.background, L.surface, .55), surface: L.surface, 'surface-2': mix(L.surface, '#FFF5E0', .6),
     ink: L.text, brand: L.primary, 'on-brand': L.background, accent: L.accent, 'accent-ink': mix(L.accent, '#000000', .2),
     btn: mix(L.accent, '#000000', .2), 'on-btn': L.background, 'btn-hover': L.primary,
     band: L.primary, 'band-2': mix(L.primary, '#000000', .4), 'on-band': L.background, 'band-accent': mix(L.accent, '#ffffff', .55),
@@ -250,10 +250,16 @@ function render(lang, S, P, ctx) {
   const mock = (v = 0) => `<div class="mk v${v % 3}" aria-hidden="true"><div class="mk-nav"><i class="mk-logo"></i><span></span><span></span><span></span><i class="mk-cart"></i></div><div class="mk-hero"><div class="mk-t"><b></b><b></b><u></u></div><div class="mk-img"></div></div><div class="mk-grid">${[0, 1, 2].map(() => '<div class="mk-card"><i></i><b></b><u></u></div>').join('')}</div></div>`;
   const media = (p, o = {}) => `<div class="media"${o.zoom && p.image ? ' data-zoom data-cursor="+"' : ''}>${mock(o.v || 0)}${p.image ? `<img src="${u(p.image)}" alt="${e(p.title)}${AR ? '' : ' storefront'}" ${o.eager ? '' : 'loading="lazy"'} decoding="async">` : ''}</div>`;
 
+  // ---------- PROJECT LINK MODE ----------
+  // A project that has a "url" and NO case-study text (overview / goals / gallery ...) is a simple card:
+  // clicking it opens the live website in a new tab, and no inner page is generated for it.
+  // مشروع فيه "url" ومفيهوش شرح تفصيلي = كارت بسيط: الضغط عليه يفتح موقع المشروع في تاب جديد ومفيش صفحة داخلية ليه.
+  const hasCase = p => !!(p.overview || p.approach || (p.goals && p.goals.length) || (p.challenges && p.challenges.length) || (p.outcomes && p.outcomes.length) || (p.gallery && p.gallery.length) || (p.beforeAfter && p.beforeAfter.before));
+  const direct = p => !!(p.url && safeUrl(p.url) && /^https?:/i.test(p.url) && !hasCase(p));
   // ---------- PROJECT CARD ----------
   const card = (p, i = 0) => `<article class="card" data-cat="${e(p.category)}" data-text="${e([p.title, p.client, p.summary, p.category].join(' ').toLowerCase())}">
-<a class="card-link" data-cursor="${e(T.cursorView)}" href="${u('/work/' + p.slug + '/')}"><div class="shot"><div class="shot-bar" aria-hidden="true"><i></i><i></i><i></i><span class="shot-url" dir="ltr">${e(host(p.url) || p.slug)}</span></div>${media(p, { v: i })}<span class="shot-idx" aria-hidden="true">${pad(i + 1)}</span><span class="shot-go" aria-hidden="true">${arrowUp}</span></div>
-<div class="card-body"><p class="meta"><span class="cat">${e(p.category)}</span>${p.demo ? `<span class="badge">${e(T.demo)}</span>` : ''}</p><h3>${e(p.title)}</h3><p class="card-sum">${e(p.summary)}</p><span class="more">${e(T.viewProject)} <span class="arr" aria-hidden="true">${arrow}</span></span></div></a>${p.url ? `<a class="live" href="${u(p.url)}" target="_blank" rel="noopener noreferrer">${e(T.visitLive)} <span aria-hidden="true">${arrowUp}</span><span class="sr"> ${e(T.newTab)}</span></a>` : ''}</article>`;
+<a class="card-link" data-cursor="${e(T.cursorView)}" href="${direct(p) ? u(p.url) : u('/work/' + p.slug + '/')}"${direct(p) ? ' target="_blank" rel="noopener noreferrer"' : ''}><div class="shot"><div class="shot-bar" aria-hidden="true"><i></i><i></i><i></i><span class="shot-url" dir="ltr">${e(host(p.url) || p.slug)}</span></div>${media(p, { v: i })}<span class="shot-idx" aria-hidden="true">${pad(i + 1)}</span><span class="shot-go" aria-hidden="true">${arrowUp}</span></div>
+<div class="card-body"><p class="meta"><span class="cat">${e(p.category)}</span>${p.demo ? `<span class="badge">${e(T.demo)}</span>` : ''}</p><h3>${e(p.title)}</h3><p class="card-sum">${e(p.summary)}</p><span class="more">${e(direct(p) ? T.visitLive : T.viewProject)} <span class="arr" aria-hidden="true">${arrow}</span></span></div></a>${!p.url && p.demo ? `<span class="live live-empty">${e(T.addLink)}</span>` : ''}${p.url && !direct(p) ? `<a class="live" href="${u(p.url)}" target="_blank" rel="noopener noreferrer">${e(T.visitLive)} <span aria-hidden="true">${arrowUp}</span><span class="sr"> ${e(T.newTab)}</span></a>` : ''}</article>`;
   // "Your brand could be next" tile at the end of the work grid / كارت دعوة في آخر شبكة الأعمال
   const cardNext = () => `<article class="card card-next"><a class="card-link" href="${u('/contact/')}"><div class="shot shot-plus" aria-hidden="true"><span>+</span></div><div class="card-body"><h3>${e(T.yourNext)}</h3><p class="card-sum">${e(T.yourNextText)}</p><span class="more">${e(T.startProject)} <span class="arr" aria-hidden="true">${arrow}</span></span></div></a></article>`;
   const btn = (b, cls) => `<a class="btn ${cls || ''}" href="${u(b.href)}"><span>${e(b.label)}</span></a>`;
@@ -436,7 +442,7 @@ function render(lang, S, P, ctx) {
   HOME.cta = cta;
 
   // ---- HOME PAGE: put the sections in the order given by "homeSections" ----
-  const DEFAULT_HOME = ['hero', 'ticker', 'work', 'statement', 'showcase', 'bigtext', 'services', 'process', 'why', 'love', 'cta'];
+  const DEFAULT_HOME = ['hero', 'ticker', 'work', 'statement', 'showcase', 'bigtext', 'services', 'process', 'why', 'cta'];
   const order = Array.isArray(S.homeSections) && S.homeSections.length ? S.homeSections : DEFAULT_HOME;
   const homeBody = order.map(x => (typeof x === 'string' ? (HOME[x] ? HOME[x]() : '') : block(x))).join('\n');
   out[K('/')] = page({
@@ -455,7 +461,7 @@ ${P.length ? `<div class="filters"><div class="fsearch"><label class="sr" for="q
 <p class="sr" id="count" role="status" aria-live="polite" data-tpl="${e(T.projectsShown)}"></p>
 <div class="grid" id="grid">${P.map(card).join('')}${cardNext()}</div><p id="empty" class="muted" hidden>${e(T.noMatch)}</p>` : `<p class="muted">${e(T.noProjects)} <a class="link" href="${u('/contact/')}">${e(T.getInTouch)}</a>.</p>`}</section>${extra('work')}${cta()}`
   });
-  P.forEach(p => {
+  P.filter(p => !direct(p)).forEach(p => {
     const rel = P.filter(x => x !== p && x.category === p.category).slice(0, 2);
     const blk = (t, c) => (c ? `<section><h2>${e(t)}</h2>${c}</section>` : '');
     const ba = p.beforeAfter && p.beforeAfter.before && p.beforeAfter.after ? p.beforeAfter : null;

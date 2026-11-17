@@ -31,7 +31,7 @@ Empty values are hidden at launch. The WhatsApp number shows in Contact and as a
 
 ## 4) ترتيب الأقسام / إضافة قسم · Reorder / add sections
 `site.json` → `homeSections`. امسح اسم لإخفائه، غيّر الترتيب لتحريكه. · Delete a name to hide, reorder to move.
-الأسماء · built-in: `hero ticker work statement showcase bigtext services process why love cta`
+الأسماء · built-in: `hero ticker work statement showcase bigtext services process why cta`
 
 لإضافة قسم جديد حط object مكان الاسم · To add a section, put an object instead of a name:
 ```jsonc
@@ -48,6 +48,9 @@ Arabic version: same index in `site.ar.json` → `homeSections`.
 الصفحات الداخلية · inner pages: `extraSections: { work: [], services: [], about: [], contact: [] }`.
 
 ## 5) المشاريع · Projects
+أسهل طريقة: انسخ بلوك من `content/projects.json` (فيه شرح في أول الملف)، عبّي `title` و`category` و`summary` و`url` (لينك موقع المشروع)، وحط `cover.jpg` في `assets/img/projects/<slug>/`.
+Easiest: copy a block in `content/projects.json` (guide at the top), fill `title`, `category`, `summary`, `url` (the project's website), and drop `cover.jpg` in `assets/img/projects/<slug>/`.
+لو فيه `url` ومفيش `overview`/`goals`/`gallery`، الكارت بيفتح الموقع في تاب جديد على طول. · With a `url` and no case-study text, the card opens the live site in a new tab.
 ```bash
 npm run add-project -- "Project name" --cat "Shopify Store Design" --url https://client.com --ar "الاسم بالعربي"
 ```

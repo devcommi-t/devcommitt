@@ -128,18 +128,20 @@
     onScroll(() => { if (!raf) raf = requestAnimationFrame(loop); });
   }
 
-  // ---------- Process: stacked cards, the ring counter follows the card that is on top ----------
+  // ---------- Process: the ring counter follows the card nearest the middle of the screen ----------
+  // الدايرة بتتبع الكارت الأقرب لنص الشاشة (قراءة واحدة لكل فريم، من غير getComputedStyle).
   const sv = $('.steps-v');
   if (sv) {
-    const lis = $$('li', sv), cnt = $('.pin-count'), num = cnt && $('b', cnt), desk = matchMedia('(min-width: 960px)'); let cur = -1;
+    const lis = $$('li', sv), cnt = $('.pin-count'), num = cnt && $('b', cnt); let cur = -1;
     onScroll(() => {
-      if (!desk.matches) { lis.forEach(li => li.classList.remove('past', 'cur')); return; }
-      let idx = 0;
-      lis.forEach((li, k) => { const top = parseFloat(getComputedStyle(li).top) || 0; if (li.getBoundingClientRect().top <= top + 8) idx = k; });
-      if (sv.getBoundingClientRect().top > innerHeight * .6) idx = 0;
-      lis.forEach((li, k) => { li.classList.toggle('past', k < idx); li.classList.toggle('cur', k === idx); });
-      if (idx !== cur) { cur = idx; if (cnt) { cnt.style.setProperty('--p', ((idx + 1) / lis.length).toFixed(3)); num.textContent = pad(idx + 1); num.classList.remove('flip'); void num.offsetWidth; num.classList.add('flip'); } }
+      const mid = innerHeight / 2; let idx = 0, best = 1e9;
+      const rects = lis.map(li => li.getBoundingClientRect());
+      rects.forEach((r, k) => { const d = Math.abs(r.top + r.height / 2 - mid); if (d < best) { best = d; idx = k; } });
+      if (idx === cur) return; cur = idx;
+      lis.forEach((li, k) => li.classList.toggle('cur', k === idx));
+      if (cnt) { cnt.style.setProperty('--p', ((idx + 1) / lis.length).toFixed(3)); num.textContent = pad(idx + 1); num.classList.remove('flip'); void num.offsetWidth; num.classList.add('flip'); }
     });
+    requestAnimationFrame(() => scrollFns.forEach(f => f()));
   }
 
   // ---------- 3D cube (about page) ----------
@@ -200,9 +202,11 @@
     const colours = () => { const f = n => (hex(cv(n)) || [20, 40, 35]).map(v => v / 255); gl.uniform3fv(U('c1'), f('--sh-1')); gl.uniform3fv(U('c2'), f('--sh-2')); gl.uniform3fv(U('c3'), f('--sh-3')); };
     colours(); addEventListener('dc:theme', () => setTimeout(colours, 60));
     let seen = false, raf = 0, mx = 0, my = 0, tx = 0, ty = 0; const t0 = performance.now();
-    const size = () => { const s = .55, w = Math.max(2, Math.round(c.clientWidth * s)), h = Math.max(2, Math.round(c.clientHeight * s)); if (c.width !== w || c.height !== h) { c.width = w; c.height = h; gl.viewport(0, 0, w, h); } };
-    const draw = () => {
-      size(); mx = lerp(mx, tx, .05); my = lerp(my, ty, .05);
+    const size = () => { const s = .4, w = Math.max(2, Math.round(c.clientWidth * s)), h = Math.max(2, Math.round(c.clientHeight * s)); if (c.width !== w || c.height !== h) { c.width = w; c.height = h; gl.viewport(0, 0, w, h); } };
+    let lastDraw = 0;
+    const draw = now => {
+      if (seen && now - lastDraw < 32) { raf = requestAnimationFrame(draw); return; }   // ~30fps is plenty for a slow background  |  30 فريم كفاية لخلفية بطيئة
+      lastDraw = now || 0; size(); mx = lerp(mx, tx, .05); my = lerp(my, ty, .05);
       gl.uniform2f(U('r'), c.width, c.height); gl.uniform1f(U('t'), (performance.now() - t0) / 1000); gl.uniform2f(U('m'), mx, my);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); c.classList.add('ready'); raf = seen ? requestAnimationFrame(draw) : 0;
     };
@@ -265,10 +269,10 @@
       }));
     }
 
-    // Scrambling letters on hover (English only; scrambling Arabic would break the letter joins).
+    // Scrambling letters on hover (top menu + buttons only, NOT footer links — they wrap and jump) (English only; scrambling Arabic would break the letter joins).
     if (!AR) {
       const CH = 'abcdefghijklmnopqrstuvwxyz<>/{}[]=+*#_-';
-      $$('.nav a:not(.btn):not(.lang),.foot nav a,.btn>span:not(.sr)').forEach(el => {
+      $$('.nav a:not(.btn):not(.lang),.btn>span:not(.sr)').forEach(el => {
         if (el.children.length) return;
         const hostEl = el.closest('a,button') || el, orig = el.textContent; let raf = 0;
         if (!hostEl.hasAttribute('aria-label') && !$('.sr', hostEl)) hostEl.setAttribute('aria-label', orig.trim());
@@ -289,7 +293,7 @@
     // Custom cursor.
     const dot = mk('cur cur-dot'), ring = mk('cur cur-ring', '<i class="ri"><span></span></i>'), ri = $('.ri', ring), lab = $('span', ri);
     root.classList.add('has-cur');
-    let mx = -100, my = -100, rx = -100, ry = -100, shown = false, craf = 0;
+    let mx = -100, my = -100, rx = -100, ry = -100, shown = false, craf = 0, lastT = null;
     const frame = () => {
       rx = lerp(rx, mx, .2); ry = lerp(ry, my, .2);
       ring.style.transform = `translate3d(${rx.toFixed(1)}px,${ry.toFixed(1)}px,0)`; dot.style.transform = `translate3d(${mx}px,${my}px,0)`;
@@ -298,11 +302,14 @@
     addEventListener('pointermove', e => {
       if (e.pointerType === 'touch') return; mx = e.clientX; my = e.clientY;
       if (!shown) { shown = true; rx = mx; ry = my; dot.classList.add('on'); ring.classList.add('on'); }
-      const t = e.target.closest ? e.target : document.body, l = t.closest('[data-cursor]');
-      const txt = l ? l.dataset.cursor : '';
-      lab.textContent = txt; ri.classList.toggle('lbl', !!txt);
-      ri.classList.toggle('hov', !txt && !!t.closest('a,button,summary,.fchip,[role=tab],label,.ba'));
-      ri.classList.toggle('hide', !!t.closest('input:not([type=range]):not([type=checkbox]),textarea,select'));
+      const t = e.target.closest ? e.target : document.body;
+      if (t !== lastT) {   // only when the element under the mouse changes (cheaper)  |  بس لما العنصر تحت الماوس يتغير
+        lastT = t; const l = t.closest('[data-cursor]');
+        const txt = l ? l.dataset.cursor : '';
+        if (lab.textContent !== txt) lab.textContent = txt; ri.classList.toggle('lbl', !!txt);
+        ri.classList.toggle('hov', !txt && !!t.closest('a,button,summary,.fchip,[role=tab],label,.ba'));
+        ri.classList.toggle('hide', !!t.closest('input:not([type=range]):not([type=checkbox]),textarea,select'));
+      }
       if (!craf) craf = requestAnimationFrame(frame);
     }, { passive: true });
     addEventListener('pointerdown', () => ri.classList.add('dn')); addEventListener('pointerup', () => ri.classList.remove('dn'));
@@ -310,11 +317,11 @@
 
     // Soft coloured trail behind the pointer.
     const tc = document.createElement('canvas'); tc.className = 'trail'; tc.setAttribute('aria-hidden', 'true'); document.body.appendChild(tc);
-    const tx = tc.getContext('2d'); let pts = [], traf = 0, dpr = 1;
+    const tx = tc.getContext('2d'); let pts = [], traf = 0, dpr = 1, TH = theme(); addEventListener('dc:theme', () => setTimeout(() => { TH = theme(); }, 80));
     const tsize = () => { dpr = Math.min(devicePixelRatio || 1, 2); tc.width = innerWidth * dpr; tc.height = innerHeight * dpr; tx.setTransform(dpr, 0, 0, dpr, 0, 0); };
     tsize(); addEventListener('resize', tsize);
     const tframe = () => {
-      const now = performance.now(), th = theme(); pts = pts.filter(p => now - p.t < 520);
+      const now = performance.now(), th = TH; pts = pts.filter(p => now - p.t < 520);
       tx.clearRect(0, 0, innerWidth, innerHeight); tx.lineCap = 'round';
       for (let i = 1; i < pts.length; i++) {
         const a = pts[i - 1], b = pts[i], life = 1 - (now - b.t) / 520, k = i / pts.length;
@@ -324,7 +331,7 @@
       }
       traf = pts.length ? requestAnimationFrame(tframe) : 0;
     };
-    addEventListener('pointermove', e => { if (e.pointerType === 'touch') return; pts.push({ x: e.clientX, y: e.clientY, t: performance.now() }); if (pts.length > 40) pts.shift(); if (!traf) traf = requestAnimationFrame(tframe); }, { passive: true });
+    addEventListener('pointermove', e => { if (e.pointerType === 'touch') return; pts.push({ x: e.clientX, y: e.clientY, t: performance.now() }); if (pts.length > 24) pts.shift(); if (!traf) traf = requestAnimationFrame(tframe); }, { passive: true });
   }
 
   // ---------- Confetti (called after the contact form is sent) ----------

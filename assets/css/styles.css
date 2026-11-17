@@ -227,6 +227,7 @@ main { padding-top: 5.2rem; }
 [dir=rtl] .card-link:hover .more .arr { transform: translateX(-4px); }
 .live { display: inline-block; margin-top: .5rem; font-size: .9rem; font-weight: 700; color: var(--ink-2); text-underline-offset: 4px; }
 .live:hover { color: var(--accent-ink); }
+.live-empty { padding: .25rem .8rem; border: 1px dashed var(--line); border-radius: 99px; font-weight: 600; font-size: .8rem; color: var(--ink-3); }
 .card-next .shot-plus { display: grid; place-items: center; aspect-ratio: 16 / 10; padding: 0; border-style: dashed; background: transparent; box-shadow: none; }
 .card-next .shot-plus span { display: grid; place-items: center; width: 4.4rem; height: 4.4rem; border-radius: 50%; border: 2px dashed var(--accent); color: var(--accent-ink); font-size: 2.4rem; line-height: 1; transition: transform .6s var(--ease-back), background .3s, color .3s; }
 .card-next .card-link:hover .shot-plus span { transform: rotate(90deg) scale(1.1); background: var(--accent); color: var(--on-btn); }
@@ -369,18 +370,17 @@ html[lang=ar] .bt-a span { -webkit-text-stroke: 0; color: color-mix(in srgb, var
   .pc-n { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; font-weight: 800; }
   .pc-n b { font-size: 2.8rem; line-height: 1; font-variant-numeric: tabular-nums; color: var(--accent-ink); }
   .pc-n span { font-size: .9rem; color: var(--ink-3); }
-  .steps-v { display: block; padding-bottom: 6vh; }
-  .steps-v li { position: sticky; top: calc(7.5rem + var(--i, 0) * 1.3rem); margin-bottom: 14vh; }
-  .steps-v li:last-child { margin-bottom: 0; }
-  .steps-v li:nth-child(1) { --i: 0; } .steps-v li:nth-child(2) { --i: 1; } .steps-v li:nth-child(3) { --i: 2; } .steps-v li:nth-child(4) { --i: 3; } .steps-v li:nth-child(5) { --i: 4; } .steps-v li:nth-child(6) { --i: 5; } .steps-v li:nth-child(7) { --i: 6; } .steps-v li:nth-child(8) { --i: 7; }
-  .steps-v .step { height: auto; min-height: 17rem; display: grid; grid-template-columns: auto 1fr; align-content: start; column-gap: 1.6rem; padding: 2rem 2.2rem; border-radius: var(--r-lg); box-shadow: var(--sh-m); transform-origin: 50% 0; }
+  /* Process cards: normal flow (no sticky stacking = no lag, no hidden cards). The ring on the left follows the card in the middle of the screen.
+     كروت العملية: ترتيب عادي (من غير تثبيت فوق بعض)، والدايرة اللي على الشمال بتتبع الكارت اللي في نص الشاشة. */
+  .steps-v { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.4rem; padding: 0; }
+  .steps-v li { position: static; margin: 0; }
+  .steps-v .step { height: auto; min-height: 0; display: grid; grid-template-columns: auto 1fr; align-items: start; column-gap: 1.6rem; padding: 1.8rem 2rem; border-radius: var(--r-lg); box-shadow: var(--sh-s); }
   .steps-v .step:hover { transform: none; }
-  .steps-v .num { grid-row: span 2; width: auto; height: auto; border: 0; border-radius: 0; font-size: clamp(3.6rem, 6.4vw, 5.6rem); line-height: 1; color: transparent; -webkit-text-stroke: 1.5px var(--accent); }
-  .steps-v h3 { margin: .4rem 0 .5rem; font-size: 1.7rem; }
-  .steps-v p { font-size: 1.05rem; max-width: 26rem; }
-  .steps-v .step-ico { top: 1.8rem; inset-inline-end: 2rem; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 16px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent-ink); }
-  .steps-v li.past .step { transform: scale(.95); filter: brightness(.93); }
-  .steps-v li.cur .step { border-color: var(--accent); }
+  .steps-v .num { grid-row: span 2; width: auto; height: auto; border: 0; border-radius: 0; font-size: clamp(3rem, 5vw, 4.4rem); line-height: 1; color: transparent; -webkit-text-stroke: 1.5px var(--accent); }
+  .steps-v h3 { margin: .2rem 0 .4rem; font-size: 1.5rem; padding-inline-end: 4rem; }
+  .steps-v p { font-size: 1.02rem; max-width: 30rem; }
+  .steps-v .step-ico { top: 1.5rem; inset-inline-end: 1.6rem; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 14px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent-ink); }
+  .steps-v li.cur .step { border-color: var(--accent); box-shadow: var(--sh-m); }
 }
 
 /* ---------- 12. Why + Love ---------- */
