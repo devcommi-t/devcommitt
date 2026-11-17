@@ -25,7 +25,10 @@
   addEventListener('resize', () => requestAnimationFrame(run));
 
   // ---------- Smooth scrolling (mouse/trackpad only; touch keeps native scrolling) ----------
-  if (FINE) {
+  // OFF by default: hijacking the mouse wheel made long pages feel stuck. Set to true to bring it back.
+  // مقفول: التحكم في عجلة الماوس كان بيخلي الصفحات الطويلة تعلّق. غيّره لـ true لو عايزه يرجع.
+  const SMOOTH_SCROLL = false;
+  if (FINE && SMOOTH_SCROLL) {
     let target = scrollY, cur = scrollY, raf = 0;
     const max = () => root.scrollHeight - innerHeight;
     root.classList.add('smooth'); root.style.scrollBehavior = 'auto';
@@ -47,12 +50,16 @@
   $$('.card .media img, .shot-hero .media img').forEach(el => px.push({ el, k: .07, box: el.parentElement }));
   $$('.floaters .tile').forEach((el, i) => px.push({ el, k: .05 + (i % 3) * .04, box: el.parentElement }));
   $$('.aurora').forEach((el, i) => px.push({ el, k: i ? -.08 : .1, box: el.parentElement }));
-  onScroll(() => px.forEach(o => {
-    const r = o.box.getBoundingClientRect(); if (r.bottom < -300 || r.top > innerHeight + 300) return;
-    let v = -(r.top + r.height / 2 - innerHeight / 2) * o.k;
-    if (o.el.tagName === 'IMG') { const lim = r.height * .06; v = clamp(v, -lim, lim); }
-    o.el.style.setProperty('--py', v.toFixed(1) + 'px');
-  }));
+  if (FINE) onScroll(() => {
+    const out = [];
+    px.forEach(o => {   // 1) read all positions   |  اقرا كل المواضع الأول
+      const r = o.box.getBoundingClientRect(); if (r.bottom < -300 || r.top > innerHeight + 300) return;
+      let v = -(r.top + r.height / 2 - innerHeight / 2) * o.k;
+      if (o.el.tagName === 'IMG') { const lim = r.height * .06; v = clamp(v, -lim, lim); }
+      out.push([o.el, v]);
+    });
+    out.forEach(([el, v]) => el.style.setProperty('--py', v.toFixed(1) + 'px'));   // 2) then write  |  وبعدين اكتب
+  });
 
   // ---------- Hero: shapes and devices follow the mouse ----------
   const vis = $('.visual');
@@ -132,8 +139,9 @@
   // الدايرة بتتبع الكارت الأقرب لنص الشاشة (قراءة واحدة لكل فريم، من غير getComputedStyle).
   const sv = $('.steps-v');
   if (sv) {
-    const lis = $$('li', sv), cnt = $('.pin-count'), num = cnt && $('b', cnt); let cur = -1;
+    const lis = $$('li', sv), cnt = $('.pin-count'), num = cnt && $('b', cnt), desk = matchMedia('(min-width: 960px)'); let cur = -1;
     onScroll(() => {
+      if (!desk.matches) return;
       const mid = innerHeight / 2; let idx = 0, best = 1e9;
       const rects = lis.map(li => li.getBoundingClientRect());
       rects.forEach((r, k) => { const d = Math.abs(r.top + r.height / 2 - mid); if (d < best) { best = d; idx = k; } });
